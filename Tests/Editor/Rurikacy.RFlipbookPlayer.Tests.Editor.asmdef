@@ -1,0 +1,23 @@
+{
+  "name": "Rurikacy.RFlipbookPlayer.Tests.Editor",
+  "rootNamespace": "RFlipbookPlayer.Tests.Editor",
+  "references": [
+    "Rurikacy.RFlipbookPlayer.Runtime",
+    "Rurikacy.RFlipbookPlayer.Editor",
+    "UnityEngine.UI"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

@@ -27,11 +27,6 @@ namespace FlipbookEditorTools
             return data?.Player ? data.Player.GetComponent<FlipbookPlayerEventProxy>() : null;
         }
 
-        public static LocalizedFlipbookBinder GetBinder(FlipbookEditorData data)
-        {
-            return data?.Player ? data.Player.GetComponent<LocalizedFlipbookBinder>() : null;
-        }
-
         public static FlipbookPlayerEventProxy AddProxy(FlipbookPlayer player)
         {
             if (!player) return null;
@@ -44,20 +39,6 @@ namespace FlipbookEditorTools
             serializedProxy.ApplyModifiedProperties();
             PrefabUtility.RecordPrefabInstancePropertyModifications(proxy);
             return proxy;
-        }
-
-        public static LocalizedFlipbookBinder AddBinder(FlipbookPlayer player)
-        {
-            if (!player) return null;
-            LocalizedFlipbookBinder existing = player.GetComponent<LocalizedFlipbookBinder>();
-            if (existing) return existing;
-
-            LocalizedFlipbookBinder binder = Undo.AddComponent<LocalizedFlipbookBinder>(player.gameObject);
-            SerializedObject serializedBinder = new(binder);
-            serializedBinder.FindProperty("player").objectReferenceValue = player;
-            serializedBinder.ApplyModifiedProperties();
-            PrefabUtility.RecordPrefabInstancePropertyModifications(binder);
-            return binder;
         }
 
         public static HashSet<int> GetEventFrames(FlipbookPlayerEventProxy proxy)

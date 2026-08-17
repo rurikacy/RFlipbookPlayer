@@ -1,0 +1,17 @@
+{
+  "name": "Rurikacy.RFlipbookPlayer.Localization",
+  "rootNamespace": "",
+  "references": [
+    "Rurikacy.RFlipbookPlayer.Runtime",
+    "Unity.Localization"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

@@ -349,7 +349,6 @@ namespace FlipbookEditorTools
 
             BeginSection("扩展功能", SdfIconType.PlusCircle);
             FlipbookPlayerEventProxy proxy = FlipbookEventEditorUtility.GetProxy(data);
-            LocalizedFlipbookBinder binder = FlipbookEventEditorUtility.GetBinder(data);
 
             if (!proxy)
             {
@@ -369,23 +368,7 @@ namespace FlipbookEditorTools
                 serializedProxy.ApplyModifiedProperties();
             }
 
-            EditorGUILayout.Space(4f);
-            if (!binder)
-            {
-                if (IconTextButton(SdfIconType.Translate, "添加多语言绑定器", "添加 LocalizedFlipbookBinder 并自动绑定播放器"))
-                {
-                    FlipbookEventEditorUtility.AddBinder(data.Player);
-                    GUIUtility.ExitGUI();
-                }
-            }
-            else
-            {
-                SerializedObject serializedBinder = new(binder);
-                serializedBinder.Update();
-                EditorGUILayout.LabelField("多语言资源", EditorStyles.miniBoldLabel);
-                EditorGUILayout.PropertyField(serializedBinder.FindProperty("localizedClip"), GUIContent.none, true);
-                serializedBinder.ApplyModifiedProperties();
-            }
+            FlipbookEditorIntegrationRegistry.Draw(data.Player);
 
             EndSection();
         }

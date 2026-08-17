@@ -2,6 +2,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Localization;
 
+/// <summary>
+///     监听 Unity Localization 资源变化，并将当前语言对应的 FlipbookClip 应用到播放器。
+/// </summary>
 [DefaultExecutionOrder(-100)]
 [DisallowMultipleComponent]
 [RequireComponent(typeof(FlipbookPlayer))]
@@ -12,8 +15,12 @@ public class LocalizedFlipbookBinder : MonoBehaviour
     [SerializeField] private LocalizedFlipbookClip localizedClip = new();
 
     private LocalizedAsset<FlipbookClip>.ChangeHandler _clipChanged;
+    private LocalizedFlipbookClip _subscribedClip;
 
+    /// <summary>获取当前绑定的播放器。</summary>
     public FlipbookPlayer Player => player;
+
+    /// <summary>获取当前本地化 Flipbook 资源引用。</summary>
     public LocalizedFlipbookClip LocalizedClip => localizedClip;
 
     private void Awake()
@@ -34,13 +41,15 @@ public class LocalizedFlipbookBinder : MonoBehaviour
         EnsureLocalizedClip();
 
         _clipChanged ??= ApplyLocalizedClip;
-        localizedClip.AssetChanged += _clipChanged;
+        _subscribedClip = localizedClip;
+        _subscribedClip.AssetChanged += _clipChanged;
     }
 
     private void OnDisable()
     {
-        if (localizedClip != null && _clipChanged != null)
-            localizedClip.AssetChanged -= _clipChanged;
+        if (_subscribedClip != null && _clipChanged != null)
+            _subscribedClip.AssetChanged -= _clipChanged;
+        _subscribedClip = null;
     }
 
     private void OnValidate()
@@ -49,6 +58,8 @@ public class LocalizedFlipbookBinder : MonoBehaviour
         EnsureLocalizedClip();
     }
 
+    /// <summary>立即将指定 Clip 应用到播放器。</summary>
+    /// <param name="clip">要应用的 Flipbook 配置。</param>
     public void ApplyClip(FlipbookClip clip)
     {
         ApplyLocalizedClip(clip);

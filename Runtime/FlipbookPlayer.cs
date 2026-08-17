@@ -1,15 +1,22 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.UI;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
+/// <summary>
+///     播放规则网格或 Sprite Multiple 切片形式的序列帧动画。
+/// </summary>
 [ExecuteAlways]
 [AddComponentMenu("Custom/Flipbook 序列帧播放器")]
 public class FlipbookPlayer : MonoBehaviour
 {
+    private const string BuiltInShaderResourcePath = "RFlipbookPlayer/Shaders/Flipbook_Standard_Builtin";
+    private const string UniversalShaderResourcePath = "RFlipbookPlayer/Shaders/Flipbook_Standard";
+
     private static readonly int _currentFrameId = Shader.PropertyToID("_CurrentFrame");
     private static readonly int _mainTexId = Shader.PropertyToID("_MainTex");
     private static readonly int _rowId = Shader.PropertyToID("_Row");
@@ -17,10 +24,10 @@ public class FlipbookPlayer : MonoBehaviour
     private static readonly int _totalFrameId = Shader.PropertyToID("_TotalFrame");
     private static readonly int _frameModeId = Shader.PropertyToID("_FrameMode");
     private static readonly int _frameRectId = Shader.PropertyToID("_FrameRect");
+    private static Shader _builtInShader;
+    private static Shader _universalShader;
 
-    // ==========================================
-    // 基础配置
-    // ==========================================
+    /// <summary>按播放顺序排列的序列帧图集。</summary>
     [Tooltip("序列帧图集列表，单图集模式只需放入一张即可")]
     public List<Texture2D> textureList = new();
 
@@ -30,6 +37,7 @@ public class FlipbookPlayer : MonoBehaviour
     [Tooltip("帧识别方式：固定网格或 Multiple Sprite 切片")]
     public FlipbookFrameSourceMode frameSourceMode = FlipbookFrameSourceMode.Grid;
 
+    /// <summary>对应每张图集的实际总帧数；Grid 模式下会受网格容量约束。</summary>
     [Tooltip("对应每张图集的实际总帧数，例如 144")]
     public List<int> frameList = new();
 
@@ -39,28 +47,38 @@ public class FlipbookPlayer : MonoBehaviour
     [Tooltip("Multiple 模式下由同步切片生成的帧 UV 数据")]
     public List<Rect> multipleFrameUvList = new();
 
+    /// <summary>图集物理网格行数。</summary>
     [Tooltip("图集物理网格行数（Texture高度 / 单帧高度）")]
     public int row = 16;
 
+    /// <summary>图集物理网格列数。</summary>
     [Tooltip("图集物理网格列数（Texture宽度 / 单帧宽度）")]
     public int column = 16;
 
-    // ==========================================
-    // 播放设置
-    // ==========================================
+    /// <summary>目标播放帧率。</summary>
     [Tooltip("目标播放帧率（FPS）")]
     public int frameRate = 24;
 
+    /// <summary>播放到末帧后是否从第一帧重新开始。</summary>
+    [Tooltip("播放到末帧后是否从第一帧重新开始")]
     public bool loop = true;
+
+    /// <summary>进入 Play Mode 后是否在 Start 生命周期自动播放。</summary>
+    [Tooltip("进入 Play Mode 后是否在 Start 生命周期自动播放")]
     public bool autoPlayOnStart = true;
+
+    /// <summary>组件每次启用时是否自动播放。</summary>
+    [Tooltip("组件每次启用时是否自动播放")]
     public bool autoPlayOnEnable = false;
-    private readonly List<float> _segDuration = new();
+    private readonly List<int> _segmentEndFrames = new();
     private int _appliedFrame = -1;
+    private int _cachedTotalFrameCount;
     private int _currentSegIndex = -1;
     private bool _hasOriginalRawImageState;
     private bool _isInitialized;
     private bool _ownsTargetMaterial;
     private Material _originalRawImageMaterial;
+    private Texture _originalRawImageTexture;
     private Material _originalRendererMaterial;
     private MaterialPropertyBlock _originalPropertyBlock;
     private MaterialPropertyBlock _propertyBlock;
@@ -68,17 +86,23 @@ public class FlipbookPlayer : MonoBehaviour
     private Rect _originalRawImageUvRect;
     private Renderer _renderer;
 
-    // ==========================================
-    // 运行时私有变量
-    // ==========================================
     private Material _targetMat;
 
     private float _totalTime;
 
+    /// <summary>获取当前全局帧号；有效帧号从 1 开始，无有效帧时为 0。</summary>
     public int CurrentFrameNumber { get; private set; }
+
+    /// <summary>获取播放器当前是否正在推进时间。</summary>
     public bool IsPlaying { get; private set; }
+
+    /// <summary>获取当前播放序列已经完成的循环次数。</summary>
     public int PlaybackLoopCount { get; private set; }
+
+    /// <summary>获取播放序列标识；每次成功调用 <see cref="Play" /> 后递增。</summary>
     public int PlaybackSequenceId { get; private set; }
+
+    /// <summary>非循环播放到达末帧时触发。</summary>
     public event Action<FlipbookPlayer> PlaybackCompleted;
 
     private bool HasRenderTarget => _rawImage || (_renderer && _targetMat);
@@ -95,7 +119,7 @@ public class FlipbookPlayer : MonoBehaviour
         }
 #endif
 
-        if (autoPlayOnStart && Application.isPlaying) Play();
+        if (autoPlayOnStart && Application.isPlaying && !IsPlaying) Play();
     }
 
     private void Update()
@@ -104,9 +128,16 @@ public class FlipbookPlayer : MonoBehaviour
         if (!Application.isPlaying && !IsPlaying) return;
 #endif
 
-        if (!IsPlaying || textureList.Count == 0 || _segDuration.Count == 0 || !HasRenderTarget) return;
+        if (IsPlaying && textureList != null && _segmentEndFrames.Count != textureList.Count)
+            CalculateSegmentTime();
 
-        float fullDuration = _segDuration[^1];
+        if (!IsPlaying || textureList == null || textureList.Count == 0 ||
+            _cachedTotalFrameCount <= 0 || _segmentEndFrames.Count == 0 || !HasRenderTarget)
+        {
+            return;
+        }
+
+        float fullDuration = _cachedTotalFrameCount / (float)Mathf.Max(1, frameRate);
         if (fullDuration <= 0f) return;
 
         _totalTime += Time.unscaledDeltaTime;
@@ -179,7 +210,7 @@ public class FlipbookPlayer : MonoBehaviour
         frameList ??= new List<int>();
         multipleFrameUvList ??= new List<Rect>();
 
-        int gridFrames = row * column;
+        int gridFrames = GetGridFrameCapacity();
 
         while (frameList.Count < textureList.Count)
             frameList.Add(frameSourceMode == FlipbookFrameSourceMode.Grid ? gridFrames : 0);
@@ -202,10 +233,13 @@ public class FlipbookPlayer : MonoBehaviour
     {
         if (_isInitialized) return;
 
+        EnsureCollections();
+
         _rawImage = GetComponent<RawImage>();
         if (_rawImage)
         {
             _originalRawImageMaterial = _rawImage.material;
+            _originalRawImageTexture = _rawImage.texture;
             _originalRawImageUvRect = _rawImage.uvRect;
             _hasOriginalRawImageState = true;
 
@@ -223,7 +257,7 @@ public class FlipbookPlayer : MonoBehaviour
             else
 #endif
             {
-                // Runtime 下直接更新 UV，保留共享 UI 材质和 Canvas batching。
+                // 运行时直接更新 UV，保留共享 UI 材质和 Canvas 批处理。
                 if (IsFlipbookMaterial(_originalRawImageMaterial)) _rawImage.material = null;
             }
         }
@@ -260,6 +294,8 @@ public class FlipbookPlayer : MonoBehaviour
         if (_rawImage && _hasOriginalRawImageState)
         {
             _rawImage.uvRect = _originalRawImageUvRect;
+            if (_rawImage.texture != _originalRawImageTexture)
+                _rawImage.texture = _originalRawImageTexture;
             if (_rawImage.material != _originalRawImageMaterial)
                 _rawImage.material = _originalRawImageMaterial;
         }
@@ -280,6 +316,9 @@ public class FlipbookPlayer : MonoBehaviour
         }
 
         _targetMat = null;
+        _originalRawImageMaterial = null;
+        _originalRawImageTexture = null;
+        _originalRendererMaterial = null;
         _originalPropertyBlock = null;
         _propertyBlock = null;
         _hasOriginalRawImageState = false;
@@ -289,74 +328,84 @@ public class FlipbookPlayer : MonoBehaviour
     }
 
     /// <summary>
-    ///     计算各段图集的累计结束时间点
+    ///     重建各图集分段的累计帧缓存。运行时修改公开配置后应调用此方法。
     /// </summary>
     public void CalculateSegmentTime()
     {
-        _segDuration.Clear();
+        EnsureCollections();
+        _segmentEndFrames.Clear();
         _appliedFrame = -1;
+        _currentSegIndex = -1;
 
-        float accumulatedTime = 0f;
+        long accumulatedFrames = 0;
         for (int i = 0; i < textureList.Count; i++)
         {
             int frames = GetSafeFrameCount(i);
-            accumulatedTime += frames / (float)frameRate;
-            _segDuration.Add(accumulatedTime);
+            accumulatedFrames = Math.Min(int.MaxValue, accumulatedFrames + frames);
+            _segmentEndFrames.Add((int)accumulatedFrames);
         }
+
+        _cachedTotalFrameCount = (int)accumulatedFrames;
     }
 
     private int GetSafeFrameCount(int index)
     {
         if (frameSourceMode == FlipbookFrameSourceMode.Multiple)
         {
-            if (index >= 0 && index < frameList.Count) return Mathf.Max(0, frameList[index]);
+            if (frameList != null && index >= 0 && index < frameList.Count)
+                return Mathf.Max(0, frameList[index]);
             return 0;
         }
 
-        int gridFrames = Mathf.Max(1, row * column);
+        int gridFrames = GetGridFrameCapacity();
 
-        if (index >= 0 && index < frameList.Count) return Mathf.Clamp(frameList[index], 1, gridFrames);
+        if (frameList != null && index >= 0 && index < frameList.Count)
+            return Mathf.Clamp(frameList[index], 1, gridFrames);
 
         return gridFrames;
     }
 
     private void UpdateAnimationState(float timePosition)
     {
-        if (_segDuration.Count == 0) return;
-
-        int targetIndex = -1;
-        for (int i = 0; i < _segDuration.Count; i++)
-            if (GetSafeFrameCount(i) > 0 && timePosition < _segDuration[i])
-            {
-                targetIndex = i;
-                break;
-            }
-
-        if (targetIndex < 0)
+        if (_cachedTotalFrameCount <= 0 || _segmentEndFrames.Count == 0)
         {
-            for (int i = _segDuration.Count - 1; i >= 0; i--)
-                if (GetSafeFrameCount(i) > 0)
-                {
-                    targetIndex = i;
-                    break;
-                }
+            CurrentFrameNumber = 0;
+            return;
         }
 
+        int globalFrameIndex = Mathf.Clamp(
+            Mathf.FloorToInt(Mathf.Max(0f, timePosition) * Mathf.Max(1, frameRate)),
+            0,
+            _cachedTotalFrameCount - 1);
+        int globalFrameNumber = globalFrameIndex + 1;
+        if (_currentSegIndex >= 0 && CurrentFrameNumber == globalFrameNumber) return;
+
+        int targetIndex = FindSegmentForFrame(globalFrameIndex);
         if (targetIndex < 0) return;
 
         if (targetIndex != _currentSegIndex) SwitchSegment(targetIndex);
 
-        float prevSegDuration = targetIndex > 0 ? _segDuration[targetIndex - 1] : 0f;
-        float localTime = Mathf.Max(0f, timePosition - prevSegDuration);
-
-        int totalFrame = GetSafeFrameCount(targetIndex);
-        int localFrame = Mathf.Min(Mathf.FloorToInt(localTime * frameRate), totalFrame - 1);
-
-        int globalFrame = localFrame + 1;
-        for (int i = 0; i < targetIndex; i++) globalFrame += GetSafeFrameCount(i);
-        CurrentFrameNumber = globalFrame;
+        int segmentStartFrame = targetIndex > 0 ? _segmentEndFrames[targetIndex - 1] : 0;
+        int localFrame = globalFrameIndex - segmentStartFrame;
+        CurrentFrameNumber = globalFrameNumber;
 
         SetCurrentFrame(localFrame);
+    }
+
+    private int FindSegmentForFrame(int globalFrameIndex)
+    {
+        int low = 0;
+        int high = _segmentEndFrames.Count - 1;
+        while (low < high)
+        {
+            int middle = low + (high - low) / 2;
+            if (globalFrameIndex < _segmentEndFrames[middle])
+                high = middle;
+            else
+                low = middle + 1;
+        }
+
+        return globalFrameIndex < _segmentEndFrames[low] ? low : -1;
     }
 
     private void SetCurrentFrame(int frame)
@@ -420,12 +469,13 @@ public class FlipbookPlayer : MonoBehaviour
         if (multipleFrameUvList == null || segmentIndex < 0 || localFrame < 0 || localFrame >= GetSafeFrameCount(segmentIndex))
             return false;
 
-        int frameIndex = localFrame;
-        for (int i = 0; i < segmentIndex; i++) frameIndex += GetSafeFrameCount(i);
+        int frameIndex = localFrame + (segmentIndex > 0 && segmentIndex <= _segmentEndFrames.Count
+            ? _segmentEndFrames[segmentIndex - 1]
+            : 0);
         if (frameIndex < 0 || frameIndex >= multipleFrameUvList.Count) return false;
 
         frameUv = multipleFrameUvList[frameIndex];
-        return frameUv.width > 0f && frameUv.height > 0f;
+        return frameUv is { width: > 0f, height: > 0f };
     }
 
     private void SwitchSegment(int index)
@@ -465,8 +515,7 @@ public class FlipbookPlayer : MonoBehaviour
 
     private Material CreateFlipbookMaterial(Material source)
     {
-        Shader shader = Shader.Find("Custom/Flipbook_Standard");
-        if (!shader) shader = Shader.Find("Custom/Flipbook_Standard_Builtin");
+        Shader shader = GetFlipbookShader();
 
         if (shader)
         {
@@ -481,7 +530,44 @@ public class FlipbookPlayer : MonoBehaviour
             return material;
         }
 
-        return source ? new Material(source) : null;
+        Debug.LogError(
+            "RFlipbookPlayer 找不到当前渲染管线对应的 Shader。请确认 Runtime/Resources/RFlipbookPlayer/Shaders 目录完整。",
+            this);
+        return null;
+    }
+
+    private static Shader GetFlipbookShader()
+    {
+        if (GraphicsSettings.currentRenderPipeline == null)
+        {
+            if (!_builtInShader)
+                _builtInShader = Resources.Load<Shader>(BuiltInShaderResourcePath) ??
+                                 Shader.Find("Custom/Flipbook_Standard_Builtin");
+            return _builtInShader;
+        }
+
+        if (!_universalShader)
+            _universalShader = Resources.Load<Shader>(UniversalShaderResourcePath) ??
+                               Shader.Find("Custom/Flipbook_Standard");
+        return _universalShader;
+    }
+
+    private static int GetGridFrameCapacity(int rows, int columns)
+    {
+        long capacity = (long)Mathf.Max(1, rows) * Mathf.Max(1, columns);
+        return (int)Math.Min(int.MaxValue, capacity);
+    }
+
+    private int GetGridFrameCapacity()
+    {
+        return GetGridFrameCapacity(row, column);
+    }
+
+    private void EnsureCollections()
+    {
+        textureList ??= new List<Texture2D>();
+        frameList ??= new List<int>();
+        multipleFrameUvList ??= new List<Rect>();
     }
 
     private bool IsFlipbookMaterial(Material material)
@@ -497,20 +583,18 @@ public class FlipbookPlayer : MonoBehaviour
 
     #region 外部控制接口
 
-    /// <summary>
-    ///     获取所有图集的总帧数
-    /// </summary>
+    /// <summary>获取所有图集的有效总帧数。</summary>
     public int GetTotalFrames()
     {
-        int total = 0;
+        if (textureList == null) return 0;
+
+        long total = 0;
         for (int i = 0; i < textureList.Count; i++) total += GetSafeFrameCount(i);
 
-        return total;
+        return (int)Math.Min(int.MaxValue, total);
     }
 
-    /// <summary>
-    ///     在 Edit Mode 下预览指定帧（1-based 全局帧号）
-    /// </summary>
+    /// <summary>在 Edit Mode 下预览指定帧（1-based 全局帧号）。</summary>
     public void PreviewFrame(int globalFrame)
     {
         InitPlayer();
@@ -546,16 +630,18 @@ public class FlipbookPlayer : MonoBehaviour
 #endif
     }
 
-    /// <summary>
-    ///     在 Edit Mode 下刷新显示第一帧预览
-    /// </summary>
+    /// <summary>在 Edit Mode 下刷新显示第一帧预览。</summary>
     public void RefreshPreview()
     {
         InitPlayer();
-
-        if (textureList.Count == 0 || !HasRenderTarget) return;
-
         CalculateSegmentTime();
+
+        if (textureList.Count == 0 || !HasRenderTarget || _cachedTotalFrameCount <= 0)
+        {
+            IsPlaying = false;
+            CurrentFrameNumber = 0;
+            return;
+        }
 
 #if UNITY_EDITOR
         if (!Application.isPlaying)
@@ -586,6 +672,7 @@ public class FlipbookPlayer : MonoBehaviour
         return -1;
     }
 
+    /// <summary>从第一帧开始播放；没有有效帧或渲染目标时不会进入播放状态。</summary>
     public void Play()
     {
         InitPlayer();
@@ -601,6 +688,12 @@ public class FlipbookPlayer : MonoBehaviour
 #endif
 
         CalculateSegmentTime();
+        if (_cachedTotalFrameCount <= 0)
+        {
+            IsPlaying = false;
+            CurrentFrameNumber = 0;
+            return;
+        }
 
         PlaybackSequenceId++;
         PlaybackLoopCount = 0;
@@ -611,11 +704,13 @@ public class FlipbookPlayer : MonoBehaviour
         UpdateAnimationState(0f);
     }
 
+    /// <summary>暂停播放并保留当前位置。</summary>
     public void Pause()
     {
         IsPlaying = false;
     }
 
+    /// <summary>从当前位置恢复播放。</summary>
     public void Resume()
     {
 #if UNITY_EDITOR
@@ -626,9 +721,11 @@ public class FlipbookPlayer : MonoBehaviour
         }
 #endif
 
-        if (textureList.Count > 0 && HasRenderTarget) IsPlaying = true;
+        if (textureList != null && textureList.Count > 0 && _cachedTotalFrameCount > 0 && HasRenderTarget)
+            IsPlaying = true;
     }
 
+    /// <summary>停止播放并回到第一帧。</summary>
     public void Stop()
     {
         IsPlaying = false;
@@ -636,7 +733,10 @@ public class FlipbookPlayer : MonoBehaviour
         _totalTime = 0f;
         _currentSegIndex = -1;
 
-        if (_isInitialized && HasRenderTarget && textureList.Count > 0) UpdateAnimationState(0f);
+        if (_isInitialized && HasRenderTarget && textureList != null && textureList.Count > 0 && _cachedTotalFrameCount > 0)
+            UpdateAnimationState(0f);
+        else
+            CurrentFrameNumber = 0;
 
 #if UNITY_EDITOR
         if (!Application.isPlaying) ApplyRawImageEditorPreview();
@@ -664,7 +764,3 @@ public class FlipbookPlayer : MonoBehaviour
 
     #endregion
 }
-
-// =========================================================================
-// 编辑器自定义面板逻辑
-// =========================================================================

@@ -155,31 +155,4 @@ namespace FlipbookEditorTools
             }
         }
     }
-
-    [CustomEditor(typeof(LocalizedFlipbookBinder))]
-    public sealed class LocalizedFlipbookBinderOdinEditor : OdinEditor
-    {
-        public override void OnInspectorGUI()
-        {
-            LocalizedFlipbookBinder binder = target as LocalizedFlipbookBinder;
-            if (!binder) return;
-
-            serializedObject.Update();
-            SerializedProperty playerProperty = serializedObject.FindProperty("player");
-            EditorGUILayout.PropertyField(playerProperty, new GUIContent("播放器"));
-
-            FlipbookEditorGUI.BeginSection("多语言 Flipbook", SdfIconType.Translate);
-            EditorGUILayout.PropertyField(serializedObject.FindProperty("localizedClip"), GUIContent.none, true);
-            FlipbookEditorGUI.EndSection();
-            serializedObject.ApplyModifiedProperties();
-
-            FlipbookPlayer player = playerProperty.objectReferenceValue as FlipbookPlayer;
-            if (player)
-            {
-                EditorGUILayout.Space(6f);
-                if (GUILayout.Button("打开 Flipbook 工作台", GUILayout.Height(30f)))
-                    FlipbookWorkbenchWindow.Open(player);
-            }
-        }
-    }
 }

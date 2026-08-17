@@ -1,13 +1,15 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>保存可复用的 Flipbook 图集、帧布局与播放速率配置。</summary>
 [CreateAssetMenu(fileName = "FlipbookClip", menuName = "Custom/Flipbook/Flipbook Clip")]
 public class FlipbookClip : ScriptableObject
 {
     /// <summary>
     ///     获取 Flipbook 使用的图集列表。
     /// </summary>
-    [Tooltip("Flipbook texture atlases in playback order.")]
+    [Tooltip("按播放顺序排列的序列帧图集")]
     public List<Texture2D> textureList = new();
 
     /// <summary>
@@ -19,7 +21,7 @@ public class FlipbookClip : ScriptableObject
     /// <summary>
     ///     获取每个图集分段的帧数。Multiple 模式下由同步切片自动生成。
     /// </summary>
-    [Tooltip("Actual frame count for each texture atlas.")]
+    [Tooltip("每张图集实际使用的帧数")]
     public List<int> frameList = new();
 
     /// <summary>
@@ -28,19 +30,30 @@ public class FlipbookClip : ScriptableObject
     [Tooltip("Multiple 模式下由同步切片生成的帧 UV 数据")]
     public List<Rect> multipleFrameUvList = new();
 
-    [Tooltip("Physical row count in each texture atlas.")]
+    /// <summary>每张图集的物理网格行数。</summary>
+    [Tooltip("每张图集的物理网格行数")]
     [Min(1)]
     public int row = 16;
 
-    [Tooltip("Physical column count in each texture atlas.")]
+    /// <summary>每张图集的物理网格列数。</summary>
+    [Tooltip("每张图集的物理网格列数")]
     [Min(1)]
     public int column = 16;
 
-    [Tooltip("Playback frame rate for this clip.")]
+    /// <summary>该 Clip 的播放帧率。</summary>
+    [Tooltip("每秒播放帧数")]
     [Min(1)]
     public int frameRate = 24;
 
-    public int GridFrameCount => Mathf.Max(1, row) * Mathf.Max(1, column);
+    /// <summary>获取单张规则网格图集可容纳的最大帧数。</summary>
+    public int GridFrameCount
+    {
+        get
+        {
+            long capacity = (long)Mathf.Max(1, row) * Mathf.Max(1, column);
+            return (int)Math.Min(int.MaxValue, capacity);
+        }
+    }
 
     private void OnValidate()
     {
@@ -63,6 +76,8 @@ public class FlipbookClip : ScriptableObject
                 : Mathf.Max(0, frameList[i]);
     }
 
+    /// <summary>获取指定图集分段经过模式约束后的有效帧数。</summary>
+    /// <param name="index">从零开始的图集分段索引。</param>
     public int GetSafeFrameCount(int index)
     {
         if (frameSourceMode == FlipbookFrameSourceMode.Multiple)

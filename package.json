@@ -1,0 +1,17 @@
+{
+  "name": "com.rurikacy.rflipbook-player",
+  "displayName": "RFlipbookPlayer",
+  "version": "1.0.0",
+  "unity": "2021.3",
+  "description": "A lightweight atlas-based flipbook player for Unity UI and Renderer targets.",
+  "author": {
+    "name": "Rurikacy",
+    "url": "https://github.com/rurikacy/RFlipbookPlayer"
+  },
+  "license": "Unlicense",
+  "dependencies": {
+    "com.unity.ugui": "1.0.0",
+    "com.unity.localization": "1.3.2",
+    "com.unity.render-pipelines.universal": "12.1.15"
+  }
+}

@@ -12,6 +12,8 @@ namespace FlipbookEditorTools
         private static readonly Dictionary<int, FlipbookPreviewSession> Sessions = new();
         private static bool _updateHooked;
 
+        internal static int Count => Sessions.Count;
+
         static FlipbookPreviewSessions()
         {
             AssemblyReloadEvents.beforeAssemblyReload += StopAll;
@@ -23,7 +25,14 @@ namespace FlipbookEditorTools
             if (!target) return null;
 
             int instanceId = target.GetInstanceID();
-            if (!Sessions.TryGetValue(instanceId, out FlipbookPreviewSession session))
+            if (Sessions.TryGetValue(instanceId, out FlipbookPreviewSession session) && session.Target != target)
+            {
+                session.Pause();
+                Sessions.Remove(instanceId);
+                session = null;
+            }
+
+            if (session == null)
             {
                 session = new FlipbookPreviewSession(target);
                 Sessions.Add(instanceId, session);
@@ -41,7 +50,9 @@ namespace FlipbookEditorTools
             if (session.ReferenceCount > 0) return;
 
             session.Pause();
-            Sessions.Remove(session.InstanceId);
+            if (Sessions.TryGetValue(session.InstanceId, out FlipbookPreviewSession current) &&
+                ReferenceEquals(current, session))
+                Sessions.Remove(session.InstanceId);
             UpdateHookState();
         }
 
@@ -120,12 +131,13 @@ namespace FlipbookEditorTools
         public FlipbookPreviewSession(Object target)
         {
             Target = target;
+            InstanceId = target.GetInstanceID();
             CurrentFrame = 1;
             PreviewLoop = target is not FlipbookPlayer player || player.loop;
         }
 
         public Object Target { get; }
-        public int InstanceId => Target ? Target.GetInstanceID() : 0;
+        public int InstanceId { get; }
         public int ReferenceCount { get; private set; }
         public int CurrentFrame { get; private set; }
         public bool IsPlaying { get; private set; }

@@ -141,7 +141,7 @@ namespace FlipbookEditorTools
             if (frameIndex < 0 || frameIndex >= MultipleFrameUvs.arraySize) return false;
 
             frameUv = MultipleFrameUvs.GetArrayElementAtIndex(frameIndex).rectValue;
-            return frameUv.width > 0f && frameUv.height > 0f;
+            return frameUv is { width: > 0f, height: > 0f };
         }
 
         public int[] GetFrameCounts()
