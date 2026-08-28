@@ -35,19 +35,8 @@ The plugin keeps the runtime player, event proxy, editor workbench, and optional
 
 ## 📥 Installation
 
-### Import the source
-
-Clone the repository into the project or install the latest `.unitypackage` from Releases.
-
-### Unity Package Manager
-
-The repository root contains `package.json`. In `Window → Package Manager → + → Add package from git URL...`, add:
-
-```text
-https://github.com/rurikacy/RFlipbookPlayer.git#main
-```
-
-UPM resolves the Unity dependencies declared in `package.json`, but it does not install Odin. Install Odin Inspector separately before using UPM.
+1. Go to the [Releases](https://github.com/rurikacy/RFlipbookPlayer/releases) page and download the latest `.unitypackage` file.
+2. In Unity, double-click the downloaded file, or select `Assets → Import Package → Custom Package...`, choose the file, and complete the import.
 
 ---
 
@@ -62,7 +51,7 @@ UPM resolves the Unity dependencies declared in `package.json`, but it does not 
 
 ### Do you need localization?
 
-Localization code lives in `Integrations/Localization/`, and the main runtime and editor assemblies no longer reference it directly. When importing the source, delete the entire `Integrations/Localization/` directory to isolate the Unity Localization integration, then remove `com.unity.localization` from the project's `Packages/manifest.json`. With UPM, make the same change in your own package copy because the upstream `package.json` declares this dependency by default.
+Localization code lives in `Integrations/Localization/`, and the main runtime and editor assemblies no longer reference it directly. If you do not need localization, delete the entire `Integrations/Localization/` directory and remove `com.unity.localization` from the project's `Packages/manifest.json`.
 
 ### Do you need the Odin editor?
 

@@ -48,21 +48,21 @@ Shader "Custom/Flipbook_Standard"
                 float2 uv : TEXCOORD0;
             };
 
-            TEXTURE2D(_MainTex);
-            SAMPLER(sampler_MainTex);
+            TEXTURE2D (_MainTex);
+            SAMPLER (sampler_MainTex);
 
-            CBUFFER_START(UnityPerMaterial)
-                float4 _MainTex_ST;
+            CBUFFER_START (UnityPerMaterial)
+            float4 _MainTex_ST;
             CBUFFER_END
 
             UNITY_INSTANCING_BUFFER_START(FlipbookProps)
-                UNITY_DEFINE_INSTANCED_PROP(float, _Row)
-                UNITY_DEFINE_INSTANCED_PROP(float, _Col)
-                UNITY_DEFINE_INSTANCED_PROP(float, _TotalFrame)
-                UNITY_DEFINE_INSTANCED_PROP(float, _CurrentFrame)
-                UNITY_DEFINE_INSTANCED_PROP(float, _FrameMode)
-                UNITY_DEFINE_INSTANCED_PROP(float4, _FrameRect)
-            UNITY_INSTANCING_BUFFER_END(FlipbookProps)
+            UNITY_DEFINE_INSTANCED_PROP(float, _Row)
+            UNITY_DEFINE_INSTANCED_PROP(float, _Col)
+            UNITY_DEFINE_INSTANCED_PROP(float, _TotalFrame)
+            UNITY_DEFINE_INSTANCED_PROP(float, _CurrentFrame)
+            UNITY_DEFINE_INSTANCED_PROP(float, _FrameMode)
+            UNITY_DEFINE_INSTANCED_PROP(float4, _FrameRect)
+            UNITY_INSTANCING_BUFFER_END (FlipbookProps)
 
             varyings vert(attributes input)
             {

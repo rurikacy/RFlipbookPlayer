@@ -27,7 +27,9 @@ public class FlipbookPlayer : MonoBehaviour
     private static Shader _builtInShader;
     private static Shader _universalShader;
 
-    /// <summary>按播放顺序排列的序列帧图集。</summary>
+    /// <summary>
+    ///     按播放顺序排列的序列帧图集。
+    /// </summary>
     [Tooltip("序列帧图集列表，单图集模式只需放入一张即可")]
     public List<Texture2D> textureList = new();
 
@@ -37,7 +39,9 @@ public class FlipbookPlayer : MonoBehaviour
     [Tooltip("帧识别方式：固定网格或 Multiple Sprite 切片")]
     public FlipbookFrameSourceMode frameSourceMode = FlipbookFrameSourceMode.Grid;
 
-    /// <summary>对应每张图集的实际总帧数；Grid 模式下会受网格容量约束。</summary>
+    /// <summary>
+    ///     对应每张图集的实际总帧数；Grid 模式下会受网格容量约束。
+    /// </summary>
     [Tooltip("对应每张图集的实际总帧数，例如 144")]
     public List<int> frameList = new();
 
@@ -47,27 +51,39 @@ public class FlipbookPlayer : MonoBehaviour
     [Tooltip("Multiple 模式下由同步切片生成的帧 UV 数据")]
     public List<Rect> multipleFrameUvList = new();
 
-    /// <summary>图集物理网格行数。</summary>
+    /// <summary>
+    ///     图集物理网格行数。
+    /// </summary>
     [Tooltip("图集物理网格行数（Texture高度 / 单帧高度）")]
     public int row = 16;
 
-    /// <summary>图集物理网格列数。</summary>
+    /// <summary>
+    ///     图集物理网格列数。
+    /// </summary>
     [Tooltip("图集物理网格列数（Texture宽度 / 单帧宽度）")]
     public int column = 16;
 
-    /// <summary>目标播放帧率。</summary>
+    /// <summary>
+    ///     目标播放帧率。
+    /// </summary>
     [Tooltip("目标播放帧率（FPS）")]
     public int frameRate = 24;
 
-    /// <summary>播放到末帧后是否从第一帧重新开始。</summary>
+    /// <summary>
+    ///     播放到末帧后是否从第一帧重新开始。
+    /// </summary>
     [Tooltip("播放到末帧后是否从第一帧重新开始")]
     public bool loop = true;
 
-    /// <summary>进入 Play Mode 后是否在 Start 生命周期自动播放。</summary>
+    /// <summary>
+    ///     进入 Play Mode 后是否在 Start 生命周期自动播放。
+    /// </summary>
     [Tooltip("进入 Play Mode 后是否在 Start 生命周期自动播放")]
     public bool autoPlayOnStart = true;
 
-    /// <summary>组件每次启用时是否自动播放。</summary>
+    /// <summary>
+    ///     组件每次启用时是否自动播放。
+    /// </summary>
     [Tooltip("组件每次启用时是否自动播放")]
     public bool autoPlayOnEnable = false;
     private readonly List<int> _segmentEndFrames = new();
@@ -90,19 +106,29 @@ public class FlipbookPlayer : MonoBehaviour
 
     private float _totalTime;
 
-    /// <summary>获取当前全局帧号；有效帧号从 1 开始，无有效帧时为 0。</summary>
+    /// <summary>
+    ///     获取当前全局帧号；有效帧号从 1 开始，无有效帧时为 0。
+    /// </summary>
     public int CurrentFrameNumber { get; private set; }
 
-    /// <summary>获取播放器当前是否正在推进时间。</summary>
+    /// <summary>
+    ///     获取播放器当前是否正在推进时间。
+    /// </summary>
     public bool IsPlaying { get; private set; }
 
-    /// <summary>获取当前播放序列已经完成的循环次数。</summary>
+    /// <summary>
+    ///     获取当前播放序列已经完成的循环次数。
+    /// </summary>
     public int PlaybackLoopCount { get; private set; }
 
-    /// <summary>获取播放序列标识；每次成功调用 <see cref="Play" /> 后递增。</summary>
+    /// <summary>
+    ///     获取播放序列标识；每次成功调用 <see cref="Play" /> 后递增。
+    /// </summary>
     public int PlaybackSequenceId { get; private set; }
 
-    /// <summary>非循环播放到达末帧时触发。</summary>
+    /// <summary>
+    ///     非循环播放到达末帧时触发。
+    /// </summary>
     public event Action<FlipbookPlayer> PlaybackCompleted;
 
     private bool HasRenderTarget => _rawImage || (_renderer && _targetMat);
@@ -583,7 +609,9 @@ public class FlipbookPlayer : MonoBehaviour
 
     #region 外部控制接口
 
-    /// <summary>获取所有图集的有效总帧数。</summary>
+    /// <summary>
+    ///     获取所有图集的有效总帧数。
+    /// </summary>
     public int GetTotalFrames()
     {
         if (textureList == null) return 0;
@@ -594,7 +622,9 @@ public class FlipbookPlayer : MonoBehaviour
         return (int)Math.Min(int.MaxValue, total);
     }
 
-    /// <summary>在 Edit Mode 下预览指定帧（1-based 全局帧号）。</summary>
+    /// <summary>
+    ///     在 Edit Mode 下预览指定帧（1-based 全局帧号）。
+    /// </summary>
     public void PreviewFrame(int globalFrame)
     {
         InitPlayer();
@@ -630,7 +660,9 @@ public class FlipbookPlayer : MonoBehaviour
 #endif
     }
 
-    /// <summary>在 Edit Mode 下刷新显示第一帧预览。</summary>
+    /// <summary>
+    ///     在 Edit Mode 下刷新显示第一帧预览。
+    /// </summary>
     public void RefreshPreview()
     {
         InitPlayer();
@@ -672,7 +704,9 @@ public class FlipbookPlayer : MonoBehaviour
         return -1;
     }
 
-    /// <summary>从第一帧开始播放；没有有效帧或渲染目标时不会进入播放状态。</summary>
+    /// <summary>
+    ///     从第一帧开始播放；没有有效帧或渲染目标时不会进入播放状态。
+    /// </summary>
     public void Play()
     {
         InitPlayer();
@@ -704,13 +738,17 @@ public class FlipbookPlayer : MonoBehaviour
         UpdateAnimationState(0f);
     }
 
-    /// <summary>暂停播放并保留当前位置。</summary>
+    /// <summary>
+    ///     暂停播放并保留当前位置。
+    /// </summary>
     public void Pause()
     {
         IsPlaying = false;
     }
 
-    /// <summary>从当前位置恢复播放。</summary>
+    /// <summary>
+    ///     从当前位置恢复播放。
+    /// </summary>
     public void Resume()
     {
 #if UNITY_EDITOR
@@ -725,7 +763,9 @@ public class FlipbookPlayer : MonoBehaviour
             IsPlaying = true;
     }
 
-    /// <summary>停止播放并回到第一帧。</summary>
+    /// <summary>
+    ///     停止播放并回到第一帧。
+    /// </summary>
     public void Stop()
     {
         IsPlaying = false;

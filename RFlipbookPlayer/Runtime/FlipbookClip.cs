@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>保存可复用的 Flipbook 图集、帧布局与播放速率配置。</summary>
+/// <summary>
+///     保存可复用的 Flipbook 图集、帧布局与播放速率配置。
+/// </summary>
 [CreateAssetMenu(fileName = "FlipbookClip", menuName = "Custom/Flipbook/Flipbook Clip")]
 public class FlipbookClip : ScriptableObject
 {
@@ -30,22 +32,30 @@ public class FlipbookClip : ScriptableObject
     [Tooltip("Multiple 模式下由同步切片生成的帧 UV 数据")]
     public List<Rect> multipleFrameUvList = new();
 
-    /// <summary>每张图集的物理网格行数。</summary>
+    /// <summary>
+    ///     每张图集的物理网格行数。
+    /// </summary>
     [Tooltip("每张图集的物理网格行数")]
     [Min(1)]
     public int row = 16;
 
-    /// <summary>每张图集的物理网格列数。</summary>
+    /// <summary>
+    ///     每张图集的物理网格列数。
+    /// </summary>
     [Tooltip("每张图集的物理网格列数")]
     [Min(1)]
     public int column = 16;
 
-    /// <summary>该 Clip 的播放帧率。</summary>
+    /// <summary>
+    ///     该 Clip 的播放帧率。
+    /// </summary>
     [Tooltip("每秒播放帧数")]
     [Min(1)]
     public int frameRate = 24;
 
-    /// <summary>获取单张规则网格图集可容纳的最大帧数。</summary>
+    /// <summary>
+    ///     获取单张规则网格图集可容纳的最大帧数。
+    /// </summary>
     public int GridFrameCount
     {
         get
@@ -76,7 +86,9 @@ public class FlipbookClip : ScriptableObject
                 : Mathf.Max(0, frameList[i]);
     }
 
-    /// <summary>获取指定图集分段经过模式约束后的有效帧数。</summary>
+    /// <summary>
+    ///     获取指定图集分段经过模式约束后的有效帧数。
+    /// </summary>
     /// <param name="index">从零开始的图集分段索引。</param>
     public int GetSafeFrameCount(int index)
     {

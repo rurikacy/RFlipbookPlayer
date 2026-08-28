@@ -10,13 +10,17 @@ namespace FlipbookEditorTools
     {
         private static readonly List<Action<FlipbookPlayer>> Drawers = new();
 
-        /// <summary>注册一个播放器扩展 Inspector 绘制器。</summary>
+        /// <summary>
+        ///     注册一个播放器扩展 Inspector 绘制器。
+        /// </summary>
         public static void Register(Action<FlipbookPlayer> drawer)
         {
             if (drawer != null && !Drawers.Contains(drawer)) Drawers.Add(drawer);
         }
 
-        /// <summary>注销一个播放器扩展 Inspector 绘制器。</summary>
+        /// <summary>
+        ///     注销一个播放器扩展 Inspector 绘制器。
+        /// </summary>
         public static void Unregister(Action<FlipbookPlayer> drawer)
         {
             if (drawer != null) Drawers.Remove(drawer);

@@ -17,10 +17,14 @@ public class LocalizedFlipbookBinder : MonoBehaviour
     private LocalizedAsset<FlipbookClip>.ChangeHandler _clipChanged;
     private LocalizedFlipbookClip _subscribedClip;
 
-    /// <summary>获取当前绑定的播放器。</summary>
+    /// <summary>
+    ///     获取当前绑定的播放器。
+    /// </summary>
     public FlipbookPlayer Player => player;
 
-    /// <summary>获取当前本地化 Flipbook 资源引用。</summary>
+    /// <summary>
+    ///     获取当前本地化 Flipbook 资源引用。
+    /// </summary>
     public LocalizedFlipbookClip LocalizedClip => localizedClip;
 
     private void Awake()
@@ -58,7 +62,9 @@ public class LocalizedFlipbookBinder : MonoBehaviour
         EnsureLocalizedClip();
     }
 
-    /// <summary>立即将指定 Clip 应用到播放器。</summary>
+    /// <summary>
+    ///     立即将指定 Clip 应用到播放器。
+    /// </summary>
     /// <param name="clip">要应用的 Flipbook 配置。</param>
     public void ApplyClip(FlipbookClip clip)
     {

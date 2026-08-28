@@ -20,16 +20,24 @@ public class FlipbookPlayerEventProxy : MonoBehaviour
     private int _observedPlaybackSequenceId;
     private int _previousFrameNumber;
 
-    /// <summary>获取 Inspector 中配置的播放完成事件。</summary>
+    /// <summary>
+    ///     获取 Inspector 中配置的播放完成事件。
+    /// </summary>
     public UnityEvent OnCompleted => onCompleted;
 
-    /// <summary>获取播放器当前的全局帧号。</summary>
+    /// <summary>
+    ///     获取播放器当前的全局帧号。
+    /// </summary>
     public int CurrentFrameNumber => player ? player.CurrentFrameNumber : 0;
 
-    /// <summary>播放完成时触发。</summary>
+    /// <summary>
+    ///     播放完成时触发。
+    /// </summary>
     public event Action Completed;
 
-    /// <summary>到达已配置的任意帧时触发，参数为从 1 开始的全局帧号。</summary>
+    /// <summary>
+    ///     到达已配置的任意帧时触发，参数为从 1 开始的全局帧号。
+    /// </summary>
     public event Action<int> FrameReached;
 
     private void Awake()
@@ -101,7 +109,9 @@ public class FlipbookPlayerEventProxy : MonoBehaviour
         if (player) player.PlaybackCompleted -= OnPlayerPlaybackCompleted;
     }
 
-    /// <summary>从第一帧重新开始播放。</summary>
+    /// <summary>
+    ///     从第一帧重新开始播放。
+    /// </summary>
     public void Play()
     {
         if (!player) player = GetComponent<FlipbookPlayer>();
@@ -112,19 +122,25 @@ public class FlipbookPlayerEventProxy : MonoBehaviour
         _observedPlaybackSequenceId = player.PlaybackSequenceId;
     }
 
-    /// <summary>暂停播放并保留当前位置。</summary>
+    /// <summary>
+    ///     暂停播放并保留当前位置。
+    /// </summary>
     public void Pause()
     {
         player?.Pause();
     }
 
-    /// <summary>从当前位置恢复播放。</summary>
+    /// <summary>
+    ///     从当前位置恢复播放。
+    /// </summary>
     public void Resume()
     {
         player?.Resume();
     }
 
-    /// <summary>停止播放并回到第一帧。</summary>
+    /// <summary>
+    ///     停止播放并回到第一帧。
+    /// </summary>
     public void Stop()
     {
         player?.Stop();
@@ -182,15 +198,21 @@ public class FlipbookPlayerEventProxy : MonoBehaviour
         }
     }
 
-    /// <summary>描述一个从 1 开始的全局帧事件。</summary>
+    /// <summary>
+    ///     描述一个从 1 开始的全局帧事件。
+    /// </summary>
     [Serializable]
     public class FrameEvent
     {
-        /// <summary>从 1 开始的全局帧号。</summary>
+        /// <summary>
+        ///     从 1 开始的全局帧号。
+        /// </summary>
         [Min(1)]
         public int frameNumber = 1;
 
-        /// <summary>到达指定帧时调用的 UnityEvent。</summary>
+        /// <summary>
+        ///     到达指定帧时调用的 UnityEvent。
+        /// </summary>
         public UnityEvent onReached = new();
     }
 }

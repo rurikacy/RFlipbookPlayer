@@ -35,18 +35,8 @@
 
 ## 📥 安装
 
-### 源码导入
-
-从仓库克隆源码导入项目或从 Releases 选择最新版本 unitypackage 包安装。
-### Unity Package Manager
-
-仓库根目录包含 `package.json`，可以在 `Window → Package Manager → + → Add package from git URL...` 中添加：
-
-```text
-https://github.com/rurikacy/RFlipbookPlayer.git#main
-```
-
-UPM 会解析 `package.json` 中的 Unity 依赖，但不会安装 Odin。使用 UPM 前请先安装 Odin Inspector。
+1. 前往 [Releases](https://github.com/rurikacy/RFlipbookPlayer/releases) 页面，下载最新版本的 `.unitypackage` 文件。
+2. 在 Unity 中双击下载的文件，或选择 `Assets → Import Package → Custom Package...`，选中该文件并完成导入。
 
 ---
 
@@ -61,7 +51,7 @@ UPM 会解析 `package.json` 中的 Unity 依赖，但不会安装 Odin。使用
 
 ### 不需要多语言？
 
-多语言代码位于 `Integrations/Localization/`，主运行时和主编辑器程序集不再直接引用它。复制源码安装时，删除整个 `Integrations/Localization/` 目录即可隔离 Localization 集成；随后可以从项目 `Packages/manifest.json` 移除 `com.unity.localization`。使用 UPM 时请在自己的包副本中执行同样的裁剪，因为上游 `package.json` 默认声明了该依赖。
+多语言代码位于 `Integrations/Localization/`，主运行时和主编辑器程序集不再直接引用它。如不需要该功能，可删除整个 `Integrations/Localization/` 目录，并从项目 `Packages/manifest.json` 移除 `com.unity.localization`。
 
 ### 不需要 Odin 编辑器？
 
