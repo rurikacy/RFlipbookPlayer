@@ -70,6 +70,30 @@ public class FlipbookPlayer : MonoBehaviour
     public int frameRate = 24;
 
     /// <summary>
+    ///     每帧上边缘向内收缩的纹理像素数。
+    /// </summary>
+    [Tooltip("每帧上边缘向内收缩的纹理像素数，0 表示不收缩")]
+    [Min(0)] public int insetTop;
+
+    /// <summary>
+    ///     每帧下边缘向内收缩的纹理像素数。
+    /// </summary>
+    [Tooltip("每帧下边缘向内收缩的纹理像素数，0 表示不收缩")]
+    [Min(0)] public int insetBottom;
+
+    /// <summary>
+    ///     每帧左边缘向内收缩的纹理像素数。
+    /// </summary>
+    [Tooltip("每帧左边缘向内收缩的纹理像素数，0 表示不收缩")]
+    [Min(0)] public int insetLeft;
+
+    /// <summary>
+    ///     每帧右边缘向内收缩的纹理像素数。
+    /// </summary>
+    [Tooltip("每帧右边缘向内收缩的纹理像素数，0 表示不收缩")]
+    [Min(0)] public int insetRight;
+
+    /// <summary>
     ///     播放到末帧后是否从第一帧重新开始。
     /// </summary>
     [Tooltip("播放到末帧后是否从第一帧重新开始")]
@@ -131,8 +155,14 @@ public class FlipbookPlayer : MonoBehaviour
     /// </summary>
     public event Action<FlipbookPlayer> PlaybackCompleted;
 
+    /// <summary>
+    ///     获取播放器是否已找到可用的渲染目标。
+    /// </summary>
     private bool HasRenderTarget => _rawImage || (_renderer && _targetMat);
 
+    /// <summary>
+    ///     启动时初始化播放器并按配置自动播放。
+    /// </summary>
     private void Start()
     {
         InitPlayer();
@@ -148,6 +178,9 @@ public class FlipbookPlayer : MonoBehaviour
         if (autoPlayOnStart && Application.isPlaying && !IsPlaying) Play();
     }
 
+    /// <summary>
+    ///     按未缩放时间推进运行时播放。
+    /// </summary>
     private void Update()
     {
 #if UNITY_EDITOR
@@ -189,6 +222,9 @@ public class FlipbookPlayer : MonoBehaviour
         if (completed) PlaybackCompleted?.Invoke(this);
     }
 
+    /// <summary>
+    ///     启用时初始化播放器并按配置自动播放。
+    /// </summary>
     private void OnEnable()
     {
         InitPlayer();
@@ -204,6 +240,9 @@ public class FlipbookPlayer : MonoBehaviour
         if (autoPlayOnEnable && Application.isPlaying) Play();
     }
 
+    /// <summary>
+    ///     停用时停止播放并清理编辑器预览材质。
+    /// </summary>
     private void OnDisable()
     {
         IsPlaying = false;
@@ -217,6 +256,9 @@ public class FlipbookPlayer : MonoBehaviour
 #endif
     }
 
+    /// <summary>
+    ///     销毁时释放播放器持有的材质状态。
+    /// </summary>
     private void OnDestroy()
     {
 #if UNITY_EDITOR
@@ -226,11 +268,18 @@ public class FlipbookPlayer : MonoBehaviour
 #endif
     }
 
+    /// <summary>
+    ///     在编辑器中校验并修正序列化配置。
+    /// </summary>
     private void OnValidate()
     {
         row = Mathf.Max(1, row);
         column = Mathf.Max(1, column);
         frameRate = Mathf.Max(1, frameRate);
+        insetTop = Mathf.Max(0, insetTop);
+        insetBottom = Mathf.Max(0, insetBottom);
+        insetLeft = Mathf.Max(0, insetLeft);
+        insetRight = Mathf.Max(0, insetRight);
 
         textureList ??= new List<Texture2D>();
         frameList ??= new List<int>();
@@ -255,6 +304,9 @@ public class FlipbookPlayer : MonoBehaviour
 #endif
     }
 
+    /// <summary>
+    ///     查找渲染目标并初始化播放器材质和状态。
+    /// </summary>
     private void InitPlayer()
     {
         if (_isInitialized) return;
@@ -315,6 +367,10 @@ public class FlipbookPlayer : MonoBehaviour
         _isInitialized = true;
     }
 
+    /// <summary>
+    ///     恢复渲染目标并释放播放器创建的材质。
+    /// </summary>
+    /// <param name="immediate">是否立即销毁播放器创建的材质。</param>
     private void CleanupTargetMaterial(bool immediate)
     {
         if (_rawImage && _hasOriginalRawImageState)
@@ -374,6 +430,11 @@ public class FlipbookPlayer : MonoBehaviour
         _cachedTotalFrameCount = (int)accumulatedFrames;
     }
 
+    /// <summary>
+    ///     获取指定图集分段的有效帧数。
+    /// </summary>
+    /// <param name="index">从 0 开始的图集分段索引。</param>
+    /// <returns>指定分段经过模式约束后的有效帧数。</returns>
     private int GetSafeFrameCount(int index)
     {
         if (frameSourceMode == FlipbookFrameSourceMode.Multiple)
@@ -391,6 +452,10 @@ public class FlipbookPlayer : MonoBehaviour
         return gridFrames;
     }
 
+    /// <summary>
+    ///     根据播放时间切换到对应的全局帧。
+    /// </summary>
+    /// <param name="timePosition">当前播放位置，单位为秒。</param>
     private void UpdateAnimationState(float timePosition)
     {
         if (_cachedTotalFrameCount <= 0 || _segmentEndFrames.Count == 0)
@@ -418,6 +483,11 @@ public class FlipbookPlayer : MonoBehaviour
         SetCurrentFrame(localFrame);
     }
 
+    /// <summary>
+    ///     查找全局帧所属的图集分段。
+    /// </summary>
+    /// <param name="globalFrameIndex">从 0 开始的全局帧索引。</param>
+    /// <returns>全局帧所在的分段索引；未找到时返回 -1。</returns>
     private int FindSegmentForFrame(int globalFrameIndex)
     {
         int low = 0;
@@ -434,6 +504,10 @@ public class FlipbookPlayer : MonoBehaviour
         return globalFrameIndex < _segmentEndFrames[low] ? low : -1;
     }
 
+    /// <summary>
+    ///     将分段内帧的 UV 应用到当前渲染目标。
+    /// </summary>
+    /// <param name="frame">从 0 开始的当前分段内帧索引。</param>
     private void SetCurrentFrame(int frame)
     {
         if (_appliedFrame == frame) return;
@@ -468,27 +542,77 @@ public class FlipbookPlayer : MonoBehaviour
         }
     }
 
+    /// <summary>
+    ///     将 UV 矩形转换为材质属性向量。
+    /// </summary>
+    /// <param name="rect">要转换的帧 UV 矩形。</param>
+    /// <returns>依次包含 UV 起点和宽高的向量。</returns>
     private static Vector4 ToVector4(Rect rect)
     {
         return new Vector4(rect.x, rect.y, rect.width, rect.height);
     }
 
+    /// <summary>
+    ///     获取当前分段内帧经过边缘内收的 UV 矩形。
+    /// </summary>
+    /// <param name="frame">从 0 开始的当前分段内帧索引。</param>
+    /// <returns>已按像素内收的归一化帧 UV 矩形。</returns>
     private Rect GetCurrentFrameRect(int frame)
     {
+        Rect frameRect;
         if (frameSourceMode == FlipbookFrameSourceMode.Multiple && TryGetMultipleFrameUv(_currentSegIndex, frame, out Rect multipleRect))
-            return multipleRect;
+            frameRect = multipleRect;
+        else
+        {
+            int safeRow = Mathf.Max(1, row);
+            int safeColumn = Mathf.Max(1, column);
+            int colIndex = frame % safeColumn;
+            int rowIndex = safeRow - 1 - frame / safeColumn;
+            frameRect = new Rect(
+                colIndex / (float)safeColumn,
+                rowIndex / (float)safeRow,
+                1f / safeColumn,
+                1f / safeRow);
+        }
 
-        int safeRow = Mathf.Max(1, row);
-        int safeColumn = Mathf.Max(1, column);
-        int colIndex = frame % safeColumn;
-        int rowIndex = safeRow - 1 - frame / safeColumn;
-        return new Rect(
-            colIndex / (float)safeColumn,
-            rowIndex / (float)safeRow,
-            1f / safeColumn,
-            1f / safeRow);
+        Texture2D texture = _currentSegIndex >= 0 && _currentSegIndex < textureList.Count
+            ? textureList[_currentSegIndex]
+            : null;
+        return InsetFrameRect(frameRect, texture, insetTop, insetBottom, insetLeft, insetRight);
     }
 
+    /// <summary>
+    ///     按纹理像素收缩帧 UV，且至少保留一个像素的采样范围。
+    /// </summary>
+    /// <param name="frameRect">原始帧 UV。</param>
+    /// <param name="texture">帧所在图集。</param>
+    /// <param name="top">上边缘内收像素数。</param>
+    /// <param name="bottom">下边缘内收像素数。</param>
+    /// <param name="left">左边缘内收像素数。</param>
+    /// <param name="right">右边缘内收像素数。</param>
+    /// <returns>收缩后的帧 UV。</returns>
+    internal static Rect InsetFrameRect(Rect frameRect, Texture2D texture, int top, int bottom, int left, int right)
+    {
+        if (!texture) return frameRect;
+
+        float leftPixels = Mathf.Min(Mathf.Max(0, left), Mathf.Max(0f, frameRect.width * texture.width - 1f));
+        float rightPixels = Mathf.Min(Mathf.Max(0, right), Mathf.Max(0f, frameRect.width * texture.width - leftPixels - 1f));
+        float bottomPixels = Mathf.Min(Mathf.Max(0, bottom), Mathf.Max(0f, frameRect.height * texture.height - 1f));
+        float topPixels = Mathf.Min(Mathf.Max(0, top), Mathf.Max(0f, frameRect.height * texture.height - bottomPixels - 1f));
+        return new Rect(
+            frameRect.x + leftPixels / texture.width,
+            frameRect.y + bottomPixels / texture.height,
+            frameRect.width - (leftPixels + rightPixels) / texture.width,
+            frameRect.height - (bottomPixels + topPixels) / texture.height);
+    }
+
+    /// <summary>
+    ///     尝试读取指定 Multiple 切片帧的 UV。
+    /// </summary>
+    /// <param name="segmentIndex">从 0 开始的图集分段索引。</param>
+    /// <param name="localFrame">从 0 开始的分段内帧索引。</param>
+    /// <param name="frameUv">成功时返回归一化的帧 UV 矩形。</param>
+    /// <returns>找到有效切片 UV 时返回 true，否则返回 false。</returns>
     private bool TryGetMultipleFrameUv(int segmentIndex, int localFrame, out Rect frameUv)
     {
         frameUv = default;
@@ -504,6 +628,10 @@ public class FlipbookPlayer : MonoBehaviour
         return frameUv is { width: > 0f, height: > 0f };
     }
 
+    /// <summary>
+    ///     切换图集分段并更新渲染材质属性。
+    /// </summary>
+    /// <param name="index">从 0 开始的目标图集分段索引。</param>
     private void SwitchSegment(int index)
     {
         if (!HasRenderTarget || index < 0 || index >= textureList.Count) return;
@@ -539,6 +667,11 @@ public class FlipbookPlayer : MonoBehaviour
         }
     }
 
+    /// <summary>
+    ///     创建适配当前渲染管线的 Flipbook 材质。
+    /// </summary>
+    /// <param name="source">用于复制渲染设置的原始材质。</param>
+    /// <returns>创建的 Flipbook 材质；找不到 Shader 时返回 null。</returns>
     private Material CreateFlipbookMaterial(Material source)
     {
         Shader shader = GetFlipbookShader();
@@ -562,6 +695,10 @@ public class FlipbookPlayer : MonoBehaviour
         return null;
     }
 
+    /// <summary>
+    ///     获取当前渲染管线对应的 Flipbook Shader。
+    /// </summary>
+    /// <returns>当前渲染管线适用的 Shader；未找到时返回 null。</returns>
     private static Shader GetFlipbookShader()
     {
         if (GraphicsSettings.currentRenderPipeline == null)
@@ -578,17 +715,30 @@ public class FlipbookPlayer : MonoBehaviour
         return _universalShader;
     }
 
+    /// <summary>
+    ///     获取网格图集可容纳的最大帧数。
+    /// </summary>
+    /// <param name="rows">网格行数。</param>
+    /// <param name="columns">网格列数。</param>
+    /// <returns>网格图集可容纳的最大帧数。</returns>
     private static int GetGridFrameCapacity(int rows, int columns)
     {
         long capacity = (long)Mathf.Max(1, rows) * Mathf.Max(1, columns);
         return (int)Math.Min(int.MaxValue, capacity);
     }
 
+    /// <summary>
+    ///     获取网格图集可容纳的最大帧数。
+    /// </summary>
+    /// <returns>网格图集可容纳的最大帧数。</returns>
     private int GetGridFrameCapacity()
     {
         return GetGridFrameCapacity(row, column);
     }
 
+    /// <summary>
+    ///     确保序列帧配置列表已初始化。
+    /// </summary>
     private void EnsureCollections()
     {
         textureList ??= new List<Texture2D>();
@@ -596,6 +746,11 @@ public class FlipbookPlayer : MonoBehaviour
         multipleFrameUvList ??= new List<Rect>();
     }
 
+    /// <summary>
+    ///     判断材质是否包含播放器需要的 Shader 属性。
+    /// </summary>
+    /// <param name="material">待检查的材质。</param>
+    /// <returns>材质包含全部必要 Shader 属性时返回 true，否则返回 false。</returns>
     private bool IsFlipbookMaterial(Material material)
     {
         return material
@@ -607,11 +762,10 @@ public class FlipbookPlayer : MonoBehaviour
                && material.HasProperty(_currentFrameId);
     }
 
-    #region 外部控制接口
-
     /// <summary>
     ///     获取所有图集的有效总帧数。
     /// </summary>
+    /// <returns>所有图集分段的有效总帧数。</returns>
     public int GetTotalFrames()
     {
         if (textureList == null) return 0;
@@ -625,6 +779,7 @@ public class FlipbookPlayer : MonoBehaviour
     /// <summary>
     ///     在 Edit Mode 下预览指定帧（1-based 全局帧号）。
     /// </summary>
+    /// <param name="globalFrame">从 1 开始的全局帧号。</param>
     public void PreviewFrame(int globalFrame)
     {
         InitPlayer();
@@ -695,6 +850,10 @@ public class FlipbookPlayer : MonoBehaviour
 #endif
     }
 
+    /// <summary>
+    ///     查找第一个包含有效帧的图集分段。
+    /// </summary>
+    /// <returns>首个包含有效帧的分段索引；未找到时返回 -1。</returns>
     private int FindFirstSegmentWithFrames()
     {
         for (int i = 0; i < textureList.Count; i++)
@@ -759,7 +918,7 @@ public class FlipbookPlayer : MonoBehaviour
         }
 #endif
 
-        if (textureList != null && textureList.Count > 0 && _cachedTotalFrameCount > 0 && HasRenderTarget)
+        if (textureList is { Count: > 0 } && _cachedTotalFrameCount > 0 && HasRenderTarget)
             IsPlaying = true;
     }
 
@@ -773,7 +932,7 @@ public class FlipbookPlayer : MonoBehaviour
         _totalTime = 0f;
         _currentSegIndex = -1;
 
-        if (_isInitialized && HasRenderTarget && textureList != null && textureList.Count > 0 && _cachedTotalFrameCount > 0)
+        if (_isInitialized && HasRenderTarget && textureList is { Count: > 0 } && _cachedTotalFrameCount > 0)
             UpdateAnimationState(0f);
         else
             CurrentFrameNumber = 0;
@@ -784,6 +943,9 @@ public class FlipbookPlayer : MonoBehaviour
     }
 
 #if UNITY_EDITOR
+    /// <summary>
+    ///     应用编辑器预览图像。
+    /// </summary>
     private void ApplyRawImageEditorPreview()
     {
         if (!_rawImage || !_targetMat || textureList.Count == 0) return;
@@ -801,6 +963,4 @@ public class FlipbookPlayer : MonoBehaviour
         SceneView.RepaintAll();
     }
 #endif
-
-    #endregion
 }

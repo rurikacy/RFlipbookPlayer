@@ -16,6 +16,11 @@ namespace FlipbookEditorTools
         private static GUIStyle _centeredMiniLabel;
         private static GUIStyle _dropAreaStyle;
 
+        /// <summary>
+        ///     绘制带标题和图标的设置区块开头。
+        /// </summary>
+        /// <param name="title">区块标题。</param>
+        /// <param name="icon">区块或按钮图标。</param>
         public static void BeginSection(string title, SdfIconType icon = SdfIconType.None)
         {
             SirenixEditorGUI.BeginBox();
@@ -32,11 +37,19 @@ namespace FlipbookEditorTools
             SirenixEditorGUI.EndBoxHeader();
         }
 
+        /// <summary>
+        ///     结束当前设置区块。
+        /// </summary>
         public static void EndSection()
         {
             SirenixEditorGUI.EndBox();
         }
 
+        /// <summary>
+        ///     绘制播放配置和预览状态摘要。
+        /// </summary>
+        /// <param name="data">当前 Flipbook 的序列化编辑数据。</param>
+        /// <param name="session">当前编辑器预览会话。</param>
         public static void DrawSummary(FlipbookEditorData data, FlipbookPreviewSession session)
         {
             int totalFrames = data.GetTotalFrames();
@@ -79,6 +92,42 @@ namespace FlipbookEditorTools
             EndSection();
         }
 
+        /// <summary>
+        ///     绘制序列帧四边的像素内收设置。
+        /// </summary>
+        /// <param name="data">当前播放器或 Clip 的编辑数据。</param>
+        public static void DrawInsetSettings(FlipbookEditorData data)
+        {
+            BeginSection("边缘内收 · 像素", SdfIconType.Grid3x3Gap);
+            EditorGUILayout.LabelField("避免相邻帧的颜色渗入；0 表示不收缩。", EditorStyles.wordWrappedMiniLabel);
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                GUILayout.Label("垂直", GUILayout.Width(40f));
+                GUILayout.Label(new GUIContent("上", "上边缘向帧内收缩"), GUILayout.Width(18f));
+                data.InsetTop.intValue = Mathf.Max(0, EditorGUILayout.IntField(data.InsetTop.intValue));
+                GUILayout.Space(8f);
+                GUILayout.Label(new GUIContent("下", "下边缘向帧内收缩"), GUILayout.Width(18f));
+                data.InsetBottom.intValue = Mathf.Max(0, EditorGUILayout.IntField(data.InsetBottom.intValue));
+            }
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                GUILayout.Label("水平", GUILayout.Width(40f));
+                GUILayout.Label(new GUIContent("左", "左边缘向帧内收缩"), GUILayout.Width(18f));
+                data.InsetLeft.intValue = Mathf.Max(0, EditorGUILayout.IntField(data.InsetLeft.intValue));
+                GUILayout.Space(8f);
+                GUILayout.Label(new GUIContent("右", "右边缘向帧内收缩"), GUILayout.Width(18f));
+                data.InsetRight.intValue = Mathf.Max(0, EditorGUILayout.IntField(data.InsetRight.intValue));
+            }
+
+            EndSection();
+        }
+
+        /// <summary>
+        ///     绘制图集分段列表及其编辑操作。
+        /// </summary>
+        /// <param name="data">当前 Flipbook 的序列化编辑数据。</param>
         public static void DrawSegmentList(FlipbookEditorData data)
         {
             BeginSection("图集分段", SdfIconType.Images);
@@ -188,6 +237,10 @@ namespace FlipbookEditorTools
             EndSection();
         }
 
+        /// <summary>
+        ///     绘制帧识别和播放设置。
+        /// </summary>
+        /// <param name="data">当前 Flipbook 的序列化编辑数据。</param>
         public static void DrawSettings(FlipbookEditorData data)
         {
             BeginSection("帧识别与播放", data.IsMultiple ? SdfIconType.Images : SdfIconType.Grid3x3Gap);
@@ -261,8 +314,16 @@ namespace FlipbookEditorTools
             }
 
             EndSection();
+            EditorGUILayout.Space(5f);
+            DrawInsetSettings(data);
         }
 
+        /// <summary>
+        ///     绘制播放器控制和当前帧预览。
+        /// </summary>
+        /// <param name="data">当前 Flipbook 的序列化编辑数据。</param>
+        /// <param name="session">当前编辑器预览会话。</param>
+        /// <param name="drawPreview">是否绘制当前帧的图像预览。</param>
         public static void DrawPlayback(FlipbookEditorData data, FlipbookPreviewSession session, bool drawPreview)
         {
             BeginSection(Application.isPlaying ? "运行时控制" : "编辑器预览", SdfIconType.PlayCircleFill);
@@ -343,6 +404,10 @@ namespace FlipbookEditorTools
             EndSection();
         }
 
+        /// <summary>
+        ///     绘制播放器扩展组件入口。
+        /// </summary>
+        /// <param name="data">当前 Flipbook 的序列化编辑数据。</param>
         public static void DrawDependencies(FlipbookEditorData data)
         {
             if (!data.Player) return;
@@ -373,6 +438,12 @@ namespace FlipbookEditorTools
             EndSection();
         }
 
+        /// <summary>
+        ///     绘制帧事件列表。
+        /// </summary>
+        /// <param name="proxy">播放器的帧事件代理。</param>
+        /// <param name="totalFrames">可选择的最大全局帧号。</param>
+        /// <param name="selectedFrame">从 1 开始的当前选中全局帧号。</param>
         public static void DrawEventList(FlipbookPlayerEventProxy proxy, int totalFrames, int selectedFrame)
         {
             if (!proxy) return;
@@ -420,6 +491,11 @@ namespace FlipbookEditorTools
             EndSection();
         }
 
+        /// <summary>
+        ///     绘制当前帧对应的事件。
+        /// </summary>
+        /// <param name="proxy">播放器的帧事件代理。</param>
+        /// <param name="selectedFrame">从 1 开始的当前选中全局帧号。</param>
         public static void DrawSelectedEvent(FlipbookPlayerEventProxy proxy, int selectedFrame)
         {
             if (!proxy) return;
@@ -435,6 +511,12 @@ namespace FlipbookEditorTools
             serializedProxy.ApplyModifiedProperties();
         }
 
+        /// <summary>
+        ///     绘制指定全局帧的图像预览。
+        /// </summary>
+        /// <param name="data">当前 Flipbook 的序列化编辑数据。</param>
+        /// <param name="globalFrame">从 1 开始的全局帧号。</param>
+        /// <param name="height">绘制区域的高度，单位为编辑器像素。</param>
         public static void DrawFramePreview(FlipbookEditorData data, int globalFrame, float height)
         {
             FlipbookFrameLocation location = data.LocateFrame(globalFrame);
@@ -455,12 +537,25 @@ namespace FlipbookEditorTools
                 return;
             }
 
+            uv = FlipbookPlayer.InsetFrameRect(uv, texture, data.InsetTop.intValue, data.InsetBottom.intValue,
+                data.InsetLeft.intValue, data.InsetRight.intValue);
+
             float cellAspect = texture.width * uv.width / Mathf.Max(1f, texture.height * uv.height);
             Rect fittedRect = FitRect(previewRect, cellAspect, 8f);
             GUI.DrawTextureWithTexCoords(fittedRect, texture, uv, true);
             GUI.Label(new Rect(previewRect.x + 6f, previewRect.y + 4f, previewRect.width - 12f, 18f), $"#{location.GlobalFrame}", EditorStyles.miniBoldLabel);
         }
 
+        /// <summary>
+        ///     绘制图集网格并返回用户选中的全局帧。
+        /// </summary>
+        /// <param name="data">当前 Flipbook 的序列化编辑数据。</param>
+        /// <param name="segmentIndex">从 0 开始的图集分段索引。</param>
+        /// <param name="currentFrame">从 1 开始的当前全局帧号。</param>
+        /// <param name="eventFrames">包含已配置事件的全局帧号集合。</param>
+        /// <param name="availableWidth">可用于绘制图集的宽度。</param>
+        /// <param name="zoom">图集预览的缩放倍数。</param>
+        /// <returns>用户点击的全局帧号；没有选择时返回 0。</returns>
         public static int DrawAtlasGrid(
             FlipbookEditorData data,
             int segmentIndex,
@@ -539,6 +634,17 @@ namespace FlipbookEditorTools
             return clickedFrame;
         }
 
+        /// <summary>
+        ///     绘制 Multiple 切片图集并处理帧选择。
+        /// </summary>
+        /// <param name="data">当前 Flipbook 的序列化编辑数据。</param>
+        /// <param name="segmentIndex">从 0 开始的图集分段索引。</param>
+        /// <param name="currentFrame">从 1 开始的当前全局帧号。</param>
+        /// <param name="eventFrames">包含已配置事件的全局帧号集合。</param>
+        /// <param name="texture">要使用的图集纹理。</param>
+        /// <param name="availableWidth">可用于绘制图集的宽度。</param>
+        /// <param name="zoom">图集预览的缩放倍数。</param>
+        /// <returns>用户点击的全局帧号；没有选择时返回 0。</returns>
         private static int DrawMultipleAtlas(
             FlipbookEditorData data,
             int segmentIndex,
@@ -599,6 +705,14 @@ namespace FlipbookEditorTools
             return clickedFrame;
         }
 
+        /// <summary>
+        ///     绘制带提示的图标按钮。
+        /// </summary>
+        /// <param name="icon">区块或按钮图标。</param>
+        /// <param name="tooltip">鼠标悬停时显示的提示文字。</param>
+        /// <param name="size">按钮尺寸。</param>
+        /// <param name="selected">按钮当前是否处于选中状态。</param>
+        /// <returns>点击按钮时返回 true，否则返回 false。</returns>
         public static bool IconButton(SdfIconType icon, string tooltip, float size = IconButtonSize, bool selected = false)
         {
             Rect rect = GUILayoutUtility.GetRect(size, size, GUILayout.Width(size), GUILayout.Height(size));
@@ -614,6 +728,14 @@ namespace FlipbookEditorTools
             return clicked;
         }
 
+        /// <summary>
+        ///     绘制带图标和文字的按钮。
+        /// </summary>
+        /// <param name="icon">区块或按钮图标。</param>
+        /// <param name="text">按钮显示的文字。</param>
+        /// <param name="tooltip">鼠标悬停时显示的提示文字。</param>
+        /// <param name="height">绘制区域的高度，单位为编辑器像素。</param>
+        /// <returns>点击按钮时返回 true，否则返回 false。</returns>
         public static bool IconTextButton(SdfIconType icon, string text, string tooltip, float height = 28f)
         {
             Rect rect = GUILayoutUtility.GetRect(0f, height, GUILayout.ExpandWidth(true));
@@ -630,6 +752,12 @@ namespace FlipbookEditorTools
             return clicked;
         }
 
+        /// <summary>
+        ///     获取当前应在编辑器中显示的帧号。
+        /// </summary>
+        /// <param name="data">当前 Flipbook 的序列化编辑数据。</param>
+        /// <param name="session">当前编辑器预览会话。</param>
+        /// <returns>当前应显示的全局帧号。</returns>
         public static int GetDisplayedFrame(FlipbookEditorData data, FlipbookPreviewSession session)
         {
             if (Application.isPlaying && data.Player)
@@ -637,6 +765,13 @@ namespace FlipbookEditorTools
             return session?.CurrentFrame ?? 1;
         }
 
+        /// <summary>
+        ///     按指定宽高比将矩形放入边界区域。
+        /// </summary>
+        /// <param name="bounds">可供放置内容的边界矩形。</param>
+        /// <param name="aspect">目标宽高比。</param>
+        /// <param name="padding">内容与边界的间距。</param>
+        /// <returns>位于边界内并保持目标宽高比的矩形。</returns>
         private static Rect FitRect(Rect bounds, float aspect, float padding)
         {
             Rect result = new(bounds.x + padding, bounds.y + padding, bounds.width - padding * 2f, bounds.height - padding * 2f);
@@ -656,6 +791,11 @@ namespace FlipbookEditorTools
             return result;
         }
 
+        /// <summary>
+        ///     绘制一项统计信息。
+        /// </summary>
+        /// <param name="label">统计项的名称。</param>
+        /// <param name="value">统计项的显示值。</param>
         private static void DrawStat(string label, string value)
         {
             using (new EditorGUILayout.VerticalScope(GUILayout.MinWidth(54f)))
@@ -665,6 +805,12 @@ namespace FlipbookEditorTools
             }
         }
 
+        /// <summary>
+        ///     绘制矩形边框。
+        /// </summary>
+        /// <param name="rect">要描绘边框的矩形。</param>
+        /// <param name="color">边框颜色。</param>
+        /// <param name="thickness">边框粗细。</param>
         private static void DrawBorder(Rect rect, Color color, float thickness)
         {
             EditorGUI.DrawRect(new Rect(rect.x, rect.y, rect.width, thickness), color);
@@ -673,6 +819,11 @@ namespace FlipbookEditorTools
             EditorGUI.DrawRect(new Rect(rect.xMax - thickness, rect.y, thickness, rect.height), color);
         }
 
+        /// <summary>
+        ///     处理拖入图集区域的纹理。
+        /// </summary>
+        /// <param name="dropRect">接收纹理拖放操作的区域。</param>
+        /// <param name="data">当前 Flipbook 的序列化编辑数据。</param>
         private static void HandleTextureDrop(Rect dropRect, FlipbookEditorData data)
         {
             Event currentEvent = Event.current;
@@ -715,6 +866,9 @@ namespace FlipbookEditorTools
             currentEvent.Use();
         }
 
+        /// <summary>
+        ///     获取居中的小号标签样式。
+        /// </summary>
         private static GUIStyle CenteredMiniLabel => _centeredMiniLabel ??= new GUIStyle(EditorStyles.miniBoldLabel)
         {
             alignment = TextAnchor.MiddleCenter,
@@ -722,11 +876,17 @@ namespace FlipbookEditorTools
             normal = { textColor = Color.white }
         };
 
+        /// <summary>
+        ///     获取按钮文字样式。
+        /// </summary>
         private static GUIStyle ButtonLabel => _buttonLabel ??= new GUIStyle(EditorStyles.label)
         {
             alignment = TextAnchor.MiddleLeft
         };
 
+        /// <summary>
+        ///     获取图集拖放区域样式。
+        /// </summary>
         private static GUIStyle DropAreaStyle => _dropAreaStyle ??= new GUIStyle(EditorStyles.helpBox)
         {
             alignment = TextAnchor.MiddleCenter,

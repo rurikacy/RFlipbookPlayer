@@ -11,6 +11,36 @@ namespace RFlipbookPlayer.Tests.Editor
 {
     public sealed class FlipbookPlayerTests
     {
+        /// <summary>
+        ///     确认四边按纹理像素内收，且过大的设置不会使帧 UV 翻转。
+        /// </summary>
+        [Test]
+        public void InsetFrameRect_UsesTexturePixelsAndKeepsPositiveArea()
+        {
+            Texture2D texture = new(100, 80);
+            try
+            {
+                Rect frame = new(0.2f, 0.25f, 0.4f, 0.5f);
+                Rect inset = FlipbookPlayer.InsetFrameRect(frame, texture, 1, 2, 3, 4);
+
+                Assert.That(inset.xMin, Is.EqualTo(0.23f).Within(0.0001f));
+                Assert.That(inset.xMax, Is.EqualTo(0.56f).Within(0.0001f));
+                Assert.That(inset.yMin, Is.EqualTo(0.275f).Within(0.0001f));
+                Assert.That(inset.yMax, Is.EqualTo(0.7375f).Within(0.0001f));
+
+                Rect excessive = FlipbookPlayer.InsetFrameRect(frame, texture, 100, 100, 100, 100);
+                Assert.That(excessive.width, Is.EqualTo(1f / texture.width).Within(0.0001f));
+                Assert.That(excessive.height, Is.EqualTo(1f / texture.height).Within(0.0001f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(texture);
+            }
+        }
+
+        /// <summary>
+        ///     验证同一帧上的所有事件均会触发。
+        /// </summary>
         [Test]
         public void DispatchFrameEvents_InvokesEveryEventOnSameFrame()
         {
@@ -52,6 +82,9 @@ namespace RFlipbookPlayer.Tests.Editor
             }
         }
 
+        /// <summary>
+        ///     验证编辑模式停用播放器后恢复 RawImage 原纹理。
+        /// </summary>
         [Test]
         public void DisableInEditMode_RestoresRawImageTexture()
         {
@@ -85,6 +118,9 @@ namespace RFlipbookPlayer.Tests.Editor
             }
         }
 
+        /// <summary>
+        ///     验证销毁目标后的预览会话可以释放。
+        /// </summary>
         [Test]
         public void ReleaseDestroyedTarget_RemovesPreviewSession()
         {
@@ -100,6 +136,9 @@ namespace RFlipbookPlayer.Tests.Editor
             Assert.That(FlipbookPreviewSessions.Count, Is.EqualTo(initialSessionCount));
         }
 
+        /// <summary>
+        ///     验证释放旧会话时不会误删替代会话。
+        /// </summary>
         [Test]
         public void ReleaseStaleSession_DoesNotRemoveReplacement()
         {

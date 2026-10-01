@@ -40,16 +40,25 @@ public class FlipbookPlayerEventProxy : MonoBehaviour
     /// </summary>
     public event Action<int> FrameReached;
 
+    /// <summary>
+    ///     唤醒时初始化组件引用。
+    /// </summary>
     private void Awake()
     {
         if (!player) player = GetComponent<FlipbookPlayer>();
     }
 
+    /// <summary>
+    ///     重置组件引用。
+    /// </summary>
     private void Reset()
     {
         player = GetComponent<FlipbookPlayer>();
     }
 
+    /// <summary>
+    ///     在编辑器中校验并修正序列化配置。
+    /// </summary>
     private void OnValidate()
     {
         if (!player) player = GetComponent<FlipbookPlayer>();
@@ -57,6 +66,9 @@ public class FlipbookPlayerEventProxy : MonoBehaviour
         onCompleted ??= new UnityEvent();
     }
 
+    /// <summary>
+    ///     跟踪播放器帧号并派发经过的帧事件。
+    /// </summary>
     private void Update()
     {
         if (!player) return;
@@ -95,6 +107,9 @@ public class FlipbookPlayerEventProxy : MonoBehaviour
         _previousFrameNumber = currentFrameNumber;
     }
 
+    /// <summary>
+    ///     启用时订阅播放器完成事件并开始跟踪。
+    /// </summary>
     private void OnEnable()
     {
         if (!player) player = GetComponent<FlipbookPlayer>();
@@ -104,6 +119,9 @@ public class FlipbookPlayerEventProxy : MonoBehaviour
         if (player) player.PlaybackCompleted += OnPlayerPlaybackCompleted;
     }
 
+    /// <summary>
+    ///     停用时取消播放器完成事件订阅。
+    /// </summary>
     private void OnDisable()
     {
         if (player) player.PlaybackCompleted -= OnPlayerPlaybackCompleted;
@@ -148,6 +166,9 @@ public class FlipbookPlayerEventProxy : MonoBehaviour
         if (player) _observedPlaybackSequenceId = player.PlaybackSequenceId;
     }
 
+    /// <summary>
+    ///     重置帧事件代理的播放跟踪状态。
+    /// </summary>
     private void BeginTracking()
     {
         _observedLoopCount = player ? player.PlaybackLoopCount : 0;
@@ -155,6 +176,10 @@ public class FlipbookPlayerEventProxy : MonoBehaviour
         _completedThisPlay = false;
     }
 
+    /// <summary>
+    ///     在播放器完成非循环播放时触发完成事件。
+    /// </summary>
+    /// <param name="completedPlayer">发出播放完成事件的播放器。</param>
     private void OnPlayerPlaybackCompleted(FlipbookPlayer completedPlayer)
     {
         if (completedPlayer != player) return;
@@ -179,6 +204,11 @@ public class FlipbookPlayerEventProxy : MonoBehaviour
         Completed?.Invoke();
     }
 
+    /// <summary>
+    ///     触发两个全局帧号之间经过的所有帧事件。
+    /// </summary>
+    /// <param name="previousFrameNumber">上次已处理的全局帧号。</param>
+    /// <param name="currentFrameNumber">当前需要处理的全局帧号。</param>
     private void DispatchFrameEvents(int previousFrameNumber, int currentFrameNumber)
     {
         if (currentFrameNumber <= previousFrameNumber) return;

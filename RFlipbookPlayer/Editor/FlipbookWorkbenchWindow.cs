@@ -20,12 +20,19 @@ namespace FlipbookEditorTools
         private FlipbookEditorData _data;
         private FlipbookPreviewSession _session;
 
+        /// <summary>
+        ///     从菜单打开当前选择对象的工作台。
+        /// </summary>
         [MenuItem("Tools/Flipbook Workbench")]
         private static void OpenFromMenu()
         {
             Open(ResolveTarget(Selection.activeObject));
         }
 
+        /// <summary>
+        ///     打开并定位到指定目标的 Flipbook 工作台。
+        /// </summary>
+        /// <param name="target">要编辑或预览的播放器或 Clip。</param>
         public static void Open(Object target)
         {
             FlipbookWorkbenchWindow window = GetWindow<FlipbookWorkbenchWindow>();
@@ -36,6 +43,9 @@ namespace FlipbookEditorTools
             window.Focus();
         }
 
+        /// <summary>
+        ///     启用工作台时恢复目标和撤销监听。
+        /// </summary>
         protected override void OnEnable()
         {
             base.OnEnable();
@@ -43,6 +53,9 @@ namespace FlipbookEditorTools
             SetTarget(ResolveTarget(_target));
         }
 
+        /// <summary>
+        ///     关闭工作台时释放预览会话和监听。
+        /// </summary>
         protected override void OnDisable()
         {
             Undo.undoRedoPerformed -= OnUndoRedo;
@@ -50,6 +63,9 @@ namespace FlipbookEditorTools
             base.OnDisable();
         }
 
+        /// <summary>
+        ///     绘制 Flipbook 工作台界面。
+        /// </summary>
         protected override void OnImGUI()
         {
             DrawTargetToolbar();
@@ -91,11 +107,17 @@ namespace FlipbookEditorTools
             if (changed && !Application.isPlaying) _session.SetFrame(_session.CurrentFrame);
         }
 
+        /// <summary>
+        ///     播放器运行时持续刷新工作台。
+        /// </summary>
         private void Update()
         {
             if (Application.isPlaying && _data?.Player && _data.Player.IsPlaying) Repaint();
         }
 
+        /// <summary>
+        ///     绘制工作台顶部的目标选择栏。
+        /// </summary>
         private void DrawTargetToolbar()
         {
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
@@ -110,6 +132,9 @@ namespace FlipbookEditorTools
             }
         }
 
+        /// <summary>
+        ///     绘制未选择有效目标时的提示。
+        /// </summary>
         private void DrawEmptyState()
         {
             GUILayout.FlexibleSpace();
@@ -122,6 +147,11 @@ namespace FlipbookEditorTools
             GUILayout.FlexibleSpace();
         }
 
+        /// <summary>
+        ///     绘制当前图集和帧网格。
+        /// </summary>
+        /// <param name="width">绘制区域的宽度，单位为编辑器像素。</param>
+        /// <param name="displayedFrame">从 1 开始的当前显示全局帧号。</param>
         private void DrawMainGrid(float width, int displayedFrame)
         {
             using (new EditorGUILayout.VerticalScope(GUILayout.Width(width), GUILayout.ExpandHeight(true)))
@@ -161,6 +191,9 @@ namespace FlipbookEditorTools
             }
         }
 
+        /// <summary>
+        ///     绘制图集分段切换控件。
+        /// </summary>
         private void DrawAtlasTabs()
         {
             if (_data.TextureCount <= 0) return;
@@ -177,12 +210,21 @@ namespace FlipbookEditorTools
                 : EditorGUILayout.Popup("当前图集", _segmentIndex, labels);
         }
 
+        /// <summary>
+        ///     绘制播放控制、内收设置和帧信息侧栏。
+        /// </summary>
+        /// <param name="displayedFrame">从 1 开始的当前显示全局帧号。</param>
+        /// <param name="width">绘制区域的宽度，单位为编辑器像素。</param>
         private void DrawSidebar(int displayedFrame, float width)
         {
             using (new EditorGUILayout.VerticalScope(GUILayout.Width(width), GUILayout.ExpandHeight(true)))
             {
                 _sidebarScroll = EditorGUILayout.BeginScrollView(_sidebarScroll);
                 FlipbookEditorGUI.DrawPlayback(_data, _session, true);
+
+                EditorGUILayout.Space(5f);
+                using (new EditorGUI.DisabledScope(Application.isPlaying))
+                    FlipbookEditorGUI.DrawInsetSettings(_data);
 
                 FlipbookFrameLocation location = _data.LocateFrame(displayedFrame);
                 if (location.IsValid)
@@ -215,6 +257,10 @@ namespace FlipbookEditorTools
             }
         }
 
+        /// <summary>
+        ///     绘制当前帧的事件编辑工具。
+        /// </summary>
+        /// <param name="displayedFrame">从 1 开始的当前显示全局帧号。</param>
         private void DrawEventTools(int displayedFrame)
         {
             FlipbookPlayerEventProxy proxy = FlipbookEventEditorUtility.GetProxy(_data);
@@ -257,6 +303,10 @@ namespace FlipbookEditorTools
             FlipbookEditorGUI.EndSection();
         }
 
+        /// <summary>
+        ///     切换工作台的编辑目标和预览会话。
+        /// </summary>
+        /// <param name="target">要编辑或预览的播放器或 Clip。</param>
         private void SetTarget(Object target)
         {
             Object resolvedTarget = ResolveTarget(target);
@@ -272,6 +322,9 @@ namespace FlipbookEditorTools
             Repaint();
         }
 
+        /// <summary>
+        ///     释放工作台持有的预览会话。
+        /// </summary>
         private void ReleaseSession()
         {
             if (_session != null) _session.Changed -= OnPreviewChanged;
@@ -280,6 +333,9 @@ namespace FlipbookEditorTools
             _data = null;
         }
 
+        /// <summary>
+        ///     在撤销或重做后刷新编辑数据和预览。
+        /// </summary>
         private void OnUndoRedo()
         {
             if (_data == null) return;
@@ -289,11 +345,19 @@ namespace FlipbookEditorTools
             Repaint();
         }
 
+        /// <summary>
+        ///     在预览状态变化后重绘界面。
+        /// </summary>
         private void OnPreviewChanged()
         {
             Repaint();
         }
 
+        /// <summary>
+        ///     从选择对象中解析播放器或 Clip。
+        /// </summary>
+        /// <param name="candidate">待解析的 Unity 对象。</param>
+        /// <returns>解析出的播放器或 Clip；无法解析时返回 null。</returns>
         private static Object ResolveTarget(Object candidate)
         {
             if (candidate is FlipbookPlayer or FlipbookClip) return candidate;

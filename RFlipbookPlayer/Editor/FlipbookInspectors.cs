@@ -10,8 +10,14 @@ namespace FlipbookEditorTools
         private FlipbookEditorData _data;
         private FlipbookPreviewSession _session;
 
+        /// <summary>
+        ///     获取当前 Inspector 的序列化编辑数据。
+        /// </summary>
         protected FlipbookEditorData Data => _data;
 
+        /// <summary>
+        ///     启用时初始化状态和事件订阅。
+        /// </summary>
         protected override void OnEnable()
         {
             base.OnEnable();
@@ -23,6 +29,9 @@ namespace FlipbookEditorTools
             Undo.undoRedoPerformed += OnUndoRedo;
         }
 
+        /// <summary>
+        ///     停用时清理状态和事件订阅。
+        /// </summary>
         protected override void OnDisable()
         {
             Undo.undoRedoPerformed -= OnUndoRedo;
@@ -33,6 +42,9 @@ namespace FlipbookEditorTools
             base.OnDisable();
         }
 
+        /// <summary>
+        ///     绘制目标对象的自定义 Inspector。
+        /// </summary>
         public override void OnInspectorGUI()
         {
             if (targets.Length != 1)
@@ -82,11 +94,18 @@ namespace FlipbookEditorTools
                 FlipbookWorkbenchWindow.Open(_data.Target);
         }
 
+        /// <summary>
+        ///     判断播放期间是否需要持续重绘 Inspector。
+        /// </summary>
+        /// <returns>运行时播放器正在播放时返回 true，否则返回 false。</returns>
         public override bool RequiresConstantRepaint()
         {
             return Application.isPlaying && _data?.Player && _data.Player.IsPlaying;
         }
 
+        /// <summary>
+        ///     将预览帧限制在当前有效帧范围内。
+        /// </summary>
         private void ClampPreviewFrame()
         {
             if (_session == null) return;
@@ -94,6 +113,9 @@ namespace FlipbookEditorTools
             if (totalFrames > 0 && _session.CurrentFrame > totalFrames) _session.SetFrame(totalFrames);
         }
 
+        /// <summary>
+        ///     在撤销或重做后刷新编辑数据和预览。
+        /// </summary>
         private void OnUndoRedo()
         {
             if (_data == null) return;
@@ -103,6 +125,9 @@ namespace FlipbookEditorTools
             Repaint();
         }
 
+        /// <summary>
+        ///     在预览状态变化后重绘界面。
+        /// </summary>
         private void OnPreviewChanged()
         {
             Repaint();
@@ -124,6 +149,9 @@ namespace FlipbookEditorTools
     [CustomEditor(typeof(FlipbookPlayerEventProxy))]
     public sealed class FlipbookPlayerEventProxyOdinEditor : OdinEditor
     {
+        /// <summary>
+        ///     绘制目标对象的自定义 Inspector。
+        /// </summary>
         public override void OnInspectorGUI()
         {
             FlipbookPlayerEventProxy proxy = target as FlipbookPlayerEventProxy;

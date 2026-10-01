@@ -7,11 +7,18 @@ namespace FlipbookEditorTools
     [InitializeOnLoad]
     internal static class LocalizedFlipbookEditorIntegration
     {
+        /// <summary>
+        ///     注册本地化绑定组件的编辑器入口。
+        /// </summary>
         static LocalizedFlipbookEditorIntegration()
         {
             FlipbookEditorIntegrationRegistry.Register(Draw);
         }
 
+        /// <summary>
+        ///     绘制关联组件的编辑器入口。
+        /// </summary>
+        /// <param name="player">要操作的 Flipbook 播放器。</param>
         private static void Draw(FlipbookPlayer player)
         {
             if (!player) return;
@@ -38,6 +45,11 @@ namespace FlipbookEditorTools
             serializedBinder.ApplyModifiedProperties();
         }
 
+        /// <summary>
+        ///     为播放器添加并配置本地化绑定组件。
+        /// </summary>
+        /// <param name="player">要操作的 Flipbook 播放器。</param>
+        /// <returns>已添加或已存在的本地化绑定组件。</returns>
         private static LocalizedFlipbookBinder AddBinder(FlipbookPlayer player)
         {
             LocalizedFlipbookBinder existing = player.GetComponent<LocalizedFlipbookBinder>();
@@ -55,6 +67,9 @@ namespace FlipbookEditorTools
     [CustomEditor(typeof(LocalizedFlipbookBinder))]
     public sealed class LocalizedFlipbookBinderOdinEditor : OdinEditor
     {
+        /// <summary>
+        ///     绘制目标对象的自定义 Inspector。
+        /// </summary>
         public override void OnInspectorGUI()
         {
             LocalizedFlipbookBinder binder = target as LocalizedFlipbookBinder;

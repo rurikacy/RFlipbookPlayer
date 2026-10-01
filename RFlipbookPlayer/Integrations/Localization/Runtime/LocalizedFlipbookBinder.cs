@@ -27,16 +27,25 @@ public class LocalizedFlipbookBinder : MonoBehaviour
     /// </summary>
     public LocalizedFlipbookClip LocalizedClip => localizedClip;
 
+    /// <summary>
+    ///     唤醒时查找播放器并初始化本地化配置。
+    /// </summary>
     private void Awake()
     {
         ResolvePlayer();
     }
 
+    /// <summary>
+    ///     重置组件引用。
+    /// </summary>
     private void Reset()
     {
         ResolvePlayer();
     }
 
+    /// <summary>
+    ///     启用时订阅语言变化并应用当前语言的 Clip。
+    /// </summary>
     private void OnEnable()
     {
         if (!Application.isPlaying) return;
@@ -49,6 +58,9 @@ public class LocalizedFlipbookBinder : MonoBehaviour
         _subscribedClip.AssetChanged += _clipChanged;
     }
 
+    /// <summary>
+    ///     停用时取消语言变化订阅。
+    /// </summary>
     private void OnDisable()
     {
         if (_subscribedClip != null && _clipChanged != null)
@@ -56,6 +68,9 @@ public class LocalizedFlipbookBinder : MonoBehaviour
         _subscribedClip = null;
     }
 
+    /// <summary>
+    ///     在编辑器中校验并修正序列化配置。
+    /// </summary>
     private void OnValidate()
     {
         ResolvePlayer();
@@ -71,6 +86,10 @@ public class LocalizedFlipbookBinder : MonoBehaviour
         ApplyLocalizedClip(clip);
     }
 
+    /// <summary>
+    ///     解析并应用当前语言对应的 Flipbook Clip。
+    /// </summary>
+    /// <param name="clip">要应用的 Flipbook Clip。</param>
     private void ApplyLocalizedClip(FlipbookClip clip)
     {
         ResolvePlayer();
@@ -79,7 +98,7 @@ public class LocalizedFlipbookBinder : MonoBehaviour
         if (!clip)
         {
             if (localizedClip is { IsEmpty: false })
-                Debug.LogWarning($"Localized flipbook clip is missing for {localizedClip}.", this);
+                Debug.LogWarning($"未找到 {localizedClip} 对应的本地化 Flipbook Clip。", this);
 
             return;
         }
@@ -95,11 +114,19 @@ public class LocalizedFlipbookBinder : MonoBehaviour
             player.RefreshPreview();
     }
 
+    /// <summary>
+    ///     将 Clip 的图集和播放配置复制到播放器。
+    /// </summary>
+    /// <param name="clip">要应用的 Flipbook Clip。</param>
     private void ApplyClipData(FlipbookClip clip)
     {
         player.row = Mathf.Max(1, clip.row);
         player.column = Mathf.Max(1, clip.column);
         player.frameRate = Mathf.Max(1, clip.frameRate);
+        player.insetTop = Mathf.Max(0, clip.insetTop);
+        player.insetBottom = Mathf.Max(0, clip.insetBottom);
+        player.insetLeft = Mathf.Max(0, clip.insetLeft);
+        player.insetRight = Mathf.Max(0, clip.insetRight);
         player.frameSourceMode = clip.frameSourceMode;
 
         player.textureList ??= new List<Texture2D>();
@@ -122,11 +149,17 @@ public class LocalizedFlipbookBinder : MonoBehaviour
             player.multipleFrameUvList.AddRange(clip.multipleFrameUvList);
     }
 
+    /// <summary>
+    ///     查找并缓存当前对象上的播放器。
+    /// </summary>
     private void ResolvePlayer()
     {
         if (!player) player = GetComponent<FlipbookPlayer>();
     }
 
+    /// <summary>
+    ///     确保本地化 Clip 配置已初始化。
+    /// </summary>
     private void EnsureLocalizedClip()
     {
         localizedClip ??= new LocalizedFlipbookClip();

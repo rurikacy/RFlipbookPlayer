@@ -9,6 +9,10 @@ namespace RFlipbookPlayer.Tests.Runtime
 {
     public sealed class FlipbookPlayerPlayModeTests
     {
+        /// <summary>
+        ///     验证没有 Multiple 帧时播放器不会保持播放状态。
+        /// </summary>
+        /// <returns>供 Unity 测试运行器执行断言的协程。</returns>
         [UnityTest]
         public IEnumerator PlayWithNoMultipleFrames_DoesNotRemainPlaying()
         {

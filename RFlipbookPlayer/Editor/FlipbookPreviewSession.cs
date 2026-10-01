@@ -12,14 +12,25 @@ namespace FlipbookEditorTools
         private static readonly Dictionary<int, FlipbookPreviewSession> Sessions = new();
         private static bool _updateHooked;
 
+        /// <summary>
+        ///     获取当前缓存的预览会话数量。
+        /// </summary>
         internal static int Count => Sessions.Count;
 
+        /// <summary>
+        ///     初始化编辑器预览会话管理器。
+        /// </summary>
         static FlipbookPreviewSessions()
         {
             AssemblyReloadEvents.beforeAssemblyReload += StopAll;
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         }
 
+        /// <summary>
+        ///     获取目标对象的共享预览会话。
+        /// </summary>
+        /// <param name="target">要编辑或预览的播放器或 Clip。</param>
+        /// <returns>目标对象的共享预览会话。</returns>
         public static FlipbookPreviewSession Acquire(Object target)
         {
             if (!target) return null;
@@ -42,6 +53,10 @@ namespace FlipbookEditorTools
             return session;
         }
 
+        /// <summary>
+        ///     释放目标对象的预览会话引用。
+        /// </summary>
+        /// <param name="session">当前编辑器预览会话。</param>
         public static void Release(FlipbookPreviewSession session)
         {
             if (session == null) return;
@@ -56,11 +71,17 @@ namespace FlipbookEditorTools
             UpdateHookState();
         }
 
+        /// <summary>
+        ///     通知预览管理器重新检查播放更新回调。
+        /// </summary>
         internal static void NotifyPlaybackChanged()
         {
             UpdateHookState();
         }
 
+        /// <summary>
+        ///     按编辑器时间更新所有正在播放的预览会话。
+        /// </summary>
         private static void Update()
         {
             double now = EditorApplication.timeSinceStartup;
@@ -89,6 +110,9 @@ namespace FlipbookEditorTools
             if (!anyPlaying) UpdateHookState();
         }
 
+        /// <summary>
+        ///     根据预览播放状态更新编辑器刷新回调。
+        /// </summary>
         private static void UpdateHookState()
         {
             bool shouldHook = false;
@@ -109,6 +133,9 @@ namespace FlipbookEditorTools
             _updateHooked = shouldHook;
         }
 
+        /// <summary>
+        ///     停止所有正在播放的编辑器预览。
+        /// </summary>
         private static void StopAll()
         {
             foreach (FlipbookPreviewSession session in Sessions.Values) session.Pause();
@@ -116,6 +143,10 @@ namespace FlipbookEditorTools
             _updateHooked = false;
         }
 
+        /// <summary>
+        ///     在编辑器播放模式切换时停止预览。
+        /// </summary>
+        /// <param name="state">编辑器播放模式的变化状态。</param>
         private static void OnPlayModeStateChanged(PlayModeStateChange state)
         {
             if (state is PlayModeStateChange.ExitingEditMode or PlayModeStateChange.EnteredPlayMode)
@@ -128,6 +159,10 @@ namespace FlipbookEditorTools
         private double _elapsedTime;
         private double _lastUpdateTime;
 
+        /// <summary>
+        ///     创建指定目标的编辑器预览会话。
+        /// </summary>
+        /// <param name="target">要编辑或预览的播放器或 Clip。</param>
         public FlipbookPreviewSession(Object target)
         {
             Target = target;
@@ -136,24 +171,57 @@ namespace FlipbookEditorTools
             PreviewLoop = target is not FlipbookPlayer player || player.loop;
         }
 
+        /// <summary>
+        ///     获取当前预览的目标对象。
+        /// </summary>
         public Object Target { get; }
+
+        /// <summary>
+        ///     获取预览目标的 Unity 实例标识。
+        /// </summary>
         public int InstanceId { get; }
+
+        /// <summary>
+        ///     获取当前预览会话的引用数量。
+        /// </summary>
         public int ReferenceCount { get; private set; }
+
+        /// <summary>
+        ///     获取当前预览的全局帧号。
+        /// </summary>
         public int CurrentFrame { get; private set; }
+
+        /// <summary>
+        ///     获取预览是否正在播放。
+        /// </summary>
         public bool IsPlaying { get; private set; }
+
+        /// <summary>
+        ///     获取或设置预览是否循环。
+        /// </summary>
         public bool PreviewLoop { get; set; }
+
         public event Action Changed;
 
+        /// <summary>
+        ///     增加预览会话的引用计数。
+        /// </summary>
         internal void AddReference()
         {
             ReferenceCount++;
         }
 
+        /// <summary>
+        ///     减少预览会话的引用计数。
+        /// </summary>
         internal void RemoveReference()
         {
             ReferenceCount = Mathf.Max(0, ReferenceCount - 1);
         }
 
+        /// <summary>
+        ///     从当前配置的首帧开始播放。
+        /// </summary>
         public void Play()
         {
             if (Application.isPlaying || EditorApplication.isPlayingOrWillChangePlaymode) return;
@@ -170,6 +238,9 @@ namespace FlipbookEditorTools
             FlipbookPreviewSessions.NotifyPlaybackChanged();
         }
 
+        /// <summary>
+        ///     暂停播放并保留当前帧。
+        /// </summary>
         public void Pause()
         {
             if (!IsPlaying) return;
@@ -178,6 +249,9 @@ namespace FlipbookEditorTools
             FlipbookPreviewSessions.NotifyPlaybackChanged();
         }
 
+        /// <summary>
+        ///     停止播放并回到首帧。
+        /// </summary>
         public void Stop()
         {
             IsPlaying = false;
@@ -186,6 +260,10 @@ namespace FlipbookEditorTools
             FlipbookPreviewSessions.NotifyPlaybackChanged();
         }
 
+        /// <summary>
+        ///     切换到指定全局帧。
+        /// </summary>
+        /// <param name="frame">从 1 开始的目标全局帧号。</param>
         public void SetFrame(int frame)
         {
             int safeFrameRate = GetFrameRate();
@@ -194,6 +272,10 @@ namespace FlipbookEditorTools
             _lastUpdateTime = EditorApplication.timeSinceStartup;
         }
 
+        /// <summary>
+        ///     按指定方向逐帧移动预览。
+        /// </summary>
+        /// <param name="direction">逐帧移动方向；正数向前，负数向后。</param>
         public void Step(int direction)
         {
             Pause();
@@ -210,6 +292,10 @@ namespace FlipbookEditorTools
             SetFrame(nextFrame);
         }
 
+        /// <summary>
+        ///     按编辑器时间推进预览帧。
+        /// </summary>
+        /// <param name="now">当前编辑器时间，单位为秒。</param>
         internal void Tick(double now)
         {
             if (!IsPlaying || Application.isPlaying)
@@ -246,6 +332,11 @@ namespace FlipbookEditorTools
             }
         }
 
+        /// <summary>
+        ///     设置预览帧并按需应用到目标。
+        /// </summary>
+        /// <param name="frame">从 1 开始的目标全局帧号。</param>
+        /// <param name="forceApply">即使帧号未变化也重新应用预览。</param>
         private void SetFrameInternal(int frame, bool forceApply)
         {
             int totalFrames = GetTotalFrames();
@@ -260,11 +351,18 @@ namespace FlipbookEditorTools
             EditorApplication.QueuePlayerLoopUpdate();
         }
 
+        /// <summary>
+        ///     通知预览状态订阅者。
+        /// </summary>
         private void NotifyChanged()
         {
             Changed?.Invoke();
         }
 
+        /// <summary>
+        ///     获取当前预览目标的有效总帧数。
+        /// </summary>
+        /// <returns>所有图集分段的有效总帧数。</returns>
         private int GetTotalFrames()
         {
             if (Target is FlipbookPlayer player) return player.GetTotalFrames();
@@ -275,6 +373,10 @@ namespace FlipbookEditorTools
             return totalFrames;
         }
 
+        /// <summary>
+        ///     获取预览目标的有效帧率。
+        /// </summary>
+        /// <returns>当前预览目标的有效帧率。</returns>
         private int GetFrameRate()
         {
             if (Target is FlipbookPlayer player) return Mathf.Max(1, player.frameRate);

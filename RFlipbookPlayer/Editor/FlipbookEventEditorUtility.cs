@@ -10,10 +10,27 @@ namespace FlipbookEditorTools
     {
         private readonly struct EventAnchor
         {
+            /// <summary>
+            ///     帧事件在序列化数组中的索引。
+            /// </summary>
             public readonly int ArrayIndex;
+
+            /// <summary>
+            ///     帧事件所属的图集分段索引。
+            /// </summary>
             public readonly int SegmentIndex;
+
+            /// <summary>
+            ///     帧事件对应的分段内帧索引。
+            /// </summary>
             public readonly int LocalFrame;
 
+            /// <summary>
+            ///     记录帧事件在图集分段中的位置。
+            /// </summary>
+            /// <param name="arrayIndex">从 0 开始的数组元素索引。</param>
+            /// <param name="segmentIndex">从 0 开始的图集分段索引。</param>
+            /// <param name="localFrame">从 0 开始的分段内帧索引。</param>
             public EventAnchor(int arrayIndex, int segmentIndex, int localFrame)
             {
                 ArrayIndex = arrayIndex;
@@ -22,11 +39,21 @@ namespace FlipbookEditorTools
             }
         }
 
+        /// <summary>
+        ///     获取当前播放器的帧事件代理。
+        /// </summary>
+        /// <param name="data">当前 Flipbook 的序列化编辑数据。</param>
+        /// <returns>播放器关联的帧事件代理；没有代理时返回 null。</returns>
         public static FlipbookPlayerEventProxy GetProxy(FlipbookEditorData data)
         {
             return data?.Player ? data.Player.GetComponent<FlipbookPlayerEventProxy>() : null;
         }
 
+        /// <summary>
+        ///     为播放器添加并绑定帧事件代理。
+        /// </summary>
+        /// <param name="player">要操作的 Flipbook 播放器。</param>
+        /// <returns>已添加或已存在的帧事件代理；播放器无效时返回 null。</returns>
         public static FlipbookPlayerEventProxy AddProxy(FlipbookPlayer player)
         {
             if (!player) return null;
@@ -41,6 +68,11 @@ namespace FlipbookEditorTools
             return proxy;
         }
 
+        /// <summary>
+        ///     获取已配置事件的全局帧号集合。
+        /// </summary>
+        /// <param name="proxy">要读取的帧事件代理。</param>
+        /// <returns>包含已配置事件全局帧号的集合。</returns>
         public static HashSet<int> GetEventFrames(FlipbookPlayerEventProxy proxy)
         {
             HashSet<int> eventFrames = new();
@@ -54,6 +86,12 @@ namespace FlipbookEditorTools
             return eventFrames;
         }
 
+        /// <summary>
+        ///     查找指定全局帧的事件索引。
+        /// </summary>
+        /// <param name="events">序列化的帧事件数组。</param>
+        /// <param name="globalFrame">从 1 开始的全局帧号。</param>
+        /// <returns>匹配帧号的事件索引；未找到时返回 -1。</returns>
         public static int FindEventIndex(SerializedProperty events, int globalFrame)
         {
             if (events == null) return -1;
@@ -64,6 +102,12 @@ namespace FlipbookEditorTools
             return -1;
         }
 
+        /// <summary>
+        ///     添加或移除指定帧的事件。
+        /// </summary>
+        /// <param name="proxy">播放器的帧事件代理。</param>
+        /// <param name="globalFrame">从 1 开始的全局帧号。</param>
+        /// <returns>帧事件发生变化时返回 true，否则返回 false。</returns>
         public static bool ToggleEvent(FlipbookPlayerEventProxy proxy, int globalFrame)
         {
             if (!proxy || globalFrame <= 0) return false;
@@ -114,6 +158,14 @@ namespace FlipbookEditorTools
             return changed;
         }
 
+        /// <summary>
+        ///     修改事件对应的全局帧号。
+        /// </summary>
+        /// <param name="proxy">播放器的帧事件代理。</param>
+        /// <param name="arrayIndex">从 0 开始的数组元素索引。</param>
+        /// <param name="newFrame">事件修改后的全局帧号。</param>
+        /// <param name="totalFrames">播放器的有效总帧数。</param>
+        /// <returns>事件帧号发生变化时返回 true，否则返回 false。</returns>
         public static bool ChangeEventFrame(FlipbookPlayerEventProxy proxy, int arrayIndex, int newFrame, int totalFrames)
         {
             if (!proxy) return false;
@@ -139,6 +191,12 @@ namespace FlipbookEditorTools
             return changed;
         }
 
+        /// <summary>
+        ///     移除指定索引的帧事件。
+        /// </summary>
+        /// <param name="proxy">播放器的帧事件代理。</param>
+        /// <param name="arrayIndex">从 0 开始的数组元素索引。</param>
+        /// <returns>成功移除事件时返回 true，否则返回 false。</returns>
         public static bool RemoveEventAtIndex(FlipbookPlayerEventProxy proxy, int arrayIndex)
         {
             if (!proxy) return false;
@@ -361,6 +419,13 @@ namespace FlipbookEditorTools
             return sliceCount > 0;
         }
 
+        /// <summary>
+        ///     移动图集分段并同步调整帧事件。
+        /// </summary>
+        /// <param name="data">当前 Flipbook 的序列化编辑数据。</param>
+        /// <param name="fromIndex">移动前的分段索引。</param>
+        /// <param name="toIndex">移动后的分段索引。</param>
+        /// <returns>分段顺序发生变化时返回 true，否则返回 false。</returns>
         public static bool MoveSegment(FlipbookEditorData data, int fromIndex, int toIndex)
         {
             data.Update();
@@ -401,6 +466,12 @@ namespace FlipbookEditorTools
             return changed;
         }
 
+        /// <summary>
+        ///     移除图集分段并同步调整帧事件。
+        /// </summary>
+        /// <param name="data">当前 Flipbook 的序列化编辑数据。</param>
+        /// <param name="segmentIndex">从 0 开始的图集分段索引。</param>
+        /// <returns>成功移除分段时返回 true，否则返回 false。</returns>
         public static bool RemoveSegment(FlipbookEditorData data, int segmentIndex)
         {
             data.Update();
@@ -452,6 +523,12 @@ namespace FlipbookEditorTools
             return changed;
         }
 
+        /// <summary>
+        ///     添加图集分段。
+        /// </summary>
+        /// <param name="data">当前 Flipbook 的序列化编辑数据。</param>
+        /// <param name="texture">要使用的图集纹理。</param>
+        /// <returns>成功添加分段时返回 true，否则返回 false。</returns>
         public static bool AddSegment(FlipbookEditorData data, Texture2D texture)
         {
             data.Update();
@@ -478,6 +555,13 @@ namespace FlipbookEditorTools
             return data.IsMultiple && texture ? SyncMultipleSlices(data) : changed;
         }
 
+        /// <summary>
+        ///     修改分段帧数并同步调整帧事件。
+        /// </summary>
+        /// <param name="data">当前 Flipbook 的序列化编辑数据。</param>
+        /// <param name="segmentIndex">从 0 开始的图集分段索引。</param>
+        /// <param name="requestedFrameCount">请求设置的分段帧数。</param>
+        /// <returns>有效帧数发生变化时返回 true，否则返回 false。</returns>
         public static bool SetFrameCount(FlipbookEditorData data, int segmentIndex, int requestedFrameCount)
         {
             data.Update();
@@ -521,6 +605,13 @@ namespace FlipbookEditorTools
             return changed;
         }
 
+        /// <summary>
+        ///     修改网格行列数并同步调整帧事件。
+        /// </summary>
+        /// <param name="data">当前 Flipbook 的序列化编辑数据。</param>
+        /// <param name="requestedRows">请求设置的网格行数。</param>
+        /// <param name="requestedColumns">请求设置的网格列数。</param>
+        /// <returns>网格尺寸发生变化时返回 true，否则返回 false。</returns>
         public static bool SetGridSize(FlipbookEditorData data, int requestedRows, int requestedColumns)
         {
             data.Update();
@@ -564,12 +655,23 @@ namespace FlipbookEditorTools
             return changed;
         }
 
+        /// <summary>
+        ///     获取 UnityEvent 的持久化回调数量。
+        /// </summary>
+        /// <param name="unityEvent">包含持久化回调的序列化 UnityEvent。</param>
+        /// <returns>UnityEvent 中持久化回调的数量。</returns>
         public static int GetPersistentCallCount(SerializedProperty unityEvent)
         {
             SerializedProperty calls = GetPersistentCalls(unityEvent);
             return calls?.arraySize ?? 0;
         }
 
+        /// <summary>
+        ///     记录帧事件在各图集分段中的原始位置。
+        /// </summary>
+        /// <param name="proxy">播放器的帧事件代理。</param>
+        /// <param name="frameCounts">各图集分段的有效帧数。</param>
+        /// <returns>按原始事件顺序排列的分段位置记录。</returns>
         private static List<EventAnchor> CaptureEventAnchors(FlipbookPlayerEventProxy proxy, IReadOnlyList<int> frameCounts)
         {
             List<EventAnchor> anchors = new();
@@ -589,6 +691,14 @@ namespace FlipbookEditorTools
             return anchors;
         }
 
+        /// <summary>
+        ///     根据分段变化重新映射帧事件。
+        /// </summary>
+        /// <param name="proxy">播放器的帧事件代理。</param>
+        /// <param name="anchors">修改前记录的帧事件位置。</param>
+        /// <param name="newCounts">修改后各图集分段的有效帧数。</param>
+        /// <param name="mapSegment">将旧分段索引映射到新索引的函数。</param>
+        /// <param name="keepEvent">判断旧帧事件是否保留的函数。</param>
         private static void RemapEvents(
             FlipbookPlayerEventProxy proxy,
             IReadOnlyList<EventAnchor> anchors,
@@ -631,6 +741,13 @@ namespace FlipbookEditorTools
             PrefabUtility.RecordPrefabInstancePropertyModifications(proxy);
         }
 
+        /// <summary>
+        ///     计算分段移动后的索引。
+        /// </summary>
+        /// <param name="segmentIndex">移动前的分段索引。</param>
+        /// <param name="fromIndex">移动前的分段索引。</param>
+        /// <param name="toIndex">移动后的分段索引。</param>
+        /// <returns>移动后的分段索引。</returns>
         private static int MapMovedSegment(int segmentIndex, int fromIndex, int toIndex)
         {
             if (segmentIndex == fromIndex) return toIndex;
@@ -639,6 +756,12 @@ namespace FlipbookEditorTools
             return segmentIndex;
         }
 
+        /// <summary>
+        ///     统计分段变化后失效的帧事件。
+        /// </summary>
+        /// <param name="anchors">修改前记录的帧事件位置。</param>
+        /// <param name="frameCounts">各图集分段的有效帧数。</param>
+        /// <returns>分段变化后失效的帧事件数量。</returns>
         private static int CountRemovedEvents(IReadOnlyList<EventAnchor> anchors, IReadOnlyList<int> frameCounts)
         {
             int removedCount = 0;
@@ -652,6 +775,11 @@ namespace FlipbookEditorTools
             return removedCount;
         }
 
+        /// <summary>
+        ///     检查图集是否具备可同步的 Multiple Sprite 切片。
+        /// </summary>
+        /// <param name="data">当前 Flipbook 的序列化编辑数据。</param>
+        /// <returns>所有图集均可读取 Multiple 切片时返回 true，否则返回 false。</returns>
         private static bool ValidateMultipleTextures(FlipbookEditorData data)
         {
             for (int i = 0; i < data.TextureCount; i++)
@@ -669,6 +797,12 @@ namespace FlipbookEditorTools
             return true;
         }
 
+        /// <summary>
+        ///     读取图集的 Multiple Sprite 切片帧数和 UV。
+        /// </summary>
+        /// <param name="data">当前 Flipbook 的序列化编辑数据。</param>
+        /// <param name="frameCounts">各图集分段的有效帧数。</param>
+        /// <param name="frameUvs">按帧顺序排列的归一化 UV 矩形。</param>
         private static void ReadMultipleSliceData(FlipbookEditorData data, out int[] frameCounts, out List<Rect> frameUvs)
         {
             frameCounts = new int[data.TextureCount];
@@ -708,6 +842,10 @@ namespace FlipbookEditorTools
             }
         }
 
+        /// <summary>
+        ///     按帧顺序排列 Multiple Sprite 切片。
+        /// </summary>
+        /// <param name="sprites">需要按帧顺序排列的 Sprite 切片。</param>
         internal static void SortMultipleSprites(SpriteMetaData[] sprites)
         {
             if (sprites == null || sprites.Length < 2 ||
@@ -726,6 +864,12 @@ namespace FlipbookEditorTools
             Array.Sort(sprites, (left, right) => EditorUtility.NaturalCompare(left.name, right.name));
         }
 
+        /// <summary>
+        ///     尝试提取精灵名称末尾数字前的前缀。
+        /// </summary>
+        /// <param name="spriteName">要解析的 Sprite 名称。</param>
+        /// <param name="prefix">成功时返回名称末尾数字之前的前缀。</param>
+        /// <returns>名称以数字结尾且成功取得前缀时返回 true，否则返回 false。</returns>
         private static bool TryGetNumericSuffixPrefix(string spriteName, out string prefix)
         {
             prefix = null;
@@ -739,6 +883,12 @@ namespace FlipbookEditorTools
             return true;
         }
 
+        /// <summary>
+        ///     写入同步后的 Multiple 切片帧数和 UV。
+        /// </summary>
+        /// <param name="data">当前 Flipbook 的序列化编辑数据。</param>
+        /// <param name="frameCounts">各图集分段的有效帧数。</param>
+        /// <param name="frameUvs">按帧顺序排列的归一化 UV 矩形。</param>
         private static void SetMultipleFrameData(FlipbookEditorData data, IReadOnlyList<int> frameCounts, IReadOnlyList<Rect> frameUvs)
         {
             data.Frames.arraySize = frameCounts.Count;
@@ -750,6 +900,10 @@ namespace FlipbookEditorTools
                 data.MultipleFrameUvs.GetArrayElementAtIndex(i).rectValue = frameUvs[i];
         }
 
+        /// <summary>
+        ///     使分段帧数数组与图集数量一致。
+        /// </summary>
+        /// <param name="data">当前 Flipbook 的序列化编辑数据。</param>
         private static void EnsureFrameArraySize(FlipbookEditorData data)
         {
             while (data.Frames.arraySize < data.Textures.arraySize)
@@ -763,18 +917,31 @@ namespace FlipbookEditorTools
                 DeleteArrayElement(data.Frames, data.Frames.arraySize - 1);
         }
 
+        /// <summary>
+        ///     清空 UnityEvent 的持久化回调。
+        /// </summary>
+        /// <param name="unityEvent">要读取或修改的序列化 UnityEvent。</param>
         private static void ClearUnityEvent(SerializedProperty unityEvent)
         {
             SerializedProperty calls = GetPersistentCalls(unityEvent);
             if (calls != null) calls.arraySize = 0;
         }
 
+        /// <summary>
+        ///     获取 UnityEvent 中的持久化回调。
+        /// </summary>
+        /// <param name="unityEvent">包含持久化回调的序列化 UnityEvent。</param>
+        /// <returns>持久化回调数组的序列化属性；不存在时返回 null。</returns>
         private static SerializedProperty GetPersistentCalls(SerializedProperty unityEvent)
         {
             SerializedProperty persistentCalls = unityEvent?.FindPropertyRelative("m_PersistentCalls");
             return persistentCalls?.FindPropertyRelative("m_Calls");
         }
 
+        /// <summary>
+        ///     按帧号排列帧事件。
+        /// </summary>
+        /// <param name="events">序列化的帧事件数组。</param>
         private static void SortEvents(SerializedProperty events)
         {
             for (int i = 0; i < events.arraySize - 1; i++)
@@ -793,6 +960,11 @@ namespace FlipbookEditorTools
             }
         }
 
+        /// <summary>
+        ///     删除序列化数组中的指定元素。
+        /// </summary>
+        /// <param name="array">要修改的序列化数组。</param>
+        /// <param name="index">要删除的数组元素索引。</param>
         private static void DeleteArrayElement(SerializedProperty array, int index)
         {
             int oldSize = array.arraySize;

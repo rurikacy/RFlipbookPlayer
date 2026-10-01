@@ -54,6 +54,30 @@ public class FlipbookClip : ScriptableObject
     public int frameRate = 24;
 
     /// <summary>
+    ///     每帧上边缘向内收缩的纹理像素数。
+    /// </summary>
+    [Tooltip("每帧上边缘向内收缩的纹理像素数，0 表示不收缩")]
+    [Min(0)] public int insetTop;
+
+    /// <summary>
+    ///     每帧下边缘向内收缩的纹理像素数。
+    /// </summary>
+    [Tooltip("每帧下边缘向内收缩的纹理像素数，0 表示不收缩")]
+    [Min(0)] public int insetBottom;
+
+    /// <summary>
+    ///     每帧左边缘向内收缩的纹理像素数。
+    /// </summary>
+    [Tooltip("每帧左边缘向内收缩的纹理像素数，0 表示不收缩")]
+    [Min(0)] public int insetLeft;
+
+    /// <summary>
+    ///     每帧右边缘向内收缩的纹理像素数。
+    /// </summary>
+    [Tooltip("每帧右边缘向内收缩的纹理像素数，0 表示不收缩")]
+    [Min(0)] public int insetRight;
+
+    /// <summary>
     ///     获取单张规则网格图集可容纳的最大帧数。
     /// </summary>
     public int GridFrameCount
@@ -65,11 +89,18 @@ public class FlipbookClip : ScriptableObject
         }
     }
 
+    /// <summary>
+    ///     在编辑器中校验并修正序列化配置。
+    /// </summary>
     private void OnValidate()
     {
         row = Mathf.Max(1, row);
         column = Mathf.Max(1, column);
         frameRate = Mathf.Max(1, frameRate);
+        insetTop = Mathf.Max(0, insetTop);
+        insetBottom = Mathf.Max(0, insetBottom);
+        insetLeft = Mathf.Max(0, insetLeft);
+        insetRight = Mathf.Max(0, insetRight);
 
         textureList ??= new List<Texture2D>();
         frameList ??= new List<int>();
@@ -90,6 +121,7 @@ public class FlipbookClip : ScriptableObject
     ///     获取指定图集分段经过模式约束后的有效帧数。
     /// </summary>
     /// <param name="index">从零开始的图集分段索引。</param>
+    /// <returns>指定分段经过模式约束后的有效帧数。</returns>
     public int GetSafeFrameCount(int index)
     {
         if (frameSourceMode == FlipbookFrameSourceMode.Multiple)
